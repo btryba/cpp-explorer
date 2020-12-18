@@ -21,10 +21,6 @@
 				"title": "C++ Explorer: Configure"
 			},
 			{
-				"command": "cpp-explorer.addBuildEvents",
-				"title": "C++ Explorer: Add Build Events"
-			},
-			{
 				"command": "cpp-explorer.createProject",
 				"title": "C++ Explorer: Create Project"
 			},

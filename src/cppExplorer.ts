@@ -88,10 +88,64 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
         if(this.pathExists(this.workspaceRoot+"/CMakeLists.txt"))
         {
             var rootNode: TreeNode = new TreeNode(vscode.workspace.name,"workspace",this.workspaceRoot);;
+            this.runProjectEvents();
             this.createTheTree(rootNode);
             this.removeOldProjects(rootNode);
             this.updateSourcesFiles();
             this.updateExplorerProjectsFile();
+        }
+    }
+
+    runProjectEvents()
+    {
+        var projects = this.getProjects();
+        var loop;
+        for(loop = 0; loop < projects.length; loop++)
+        {
+            var internalkey = this.getOption("EnableInternalKeyword", projects[loop]);
+            if(internalkey)
+            {
+                var internalPath = this.workspaceRoot+"/"+projects[loop]+"/include/InternalKeyword.hpp";
+                if(!this.pathExists(internalPath))
+                {
+                    fs.writeFileSync(internalPath,
+                    "#ifndef INTERNALKEYWORD_HPP\n"
+                    + "    #define INTERNALKEYWORD_HPP\n\n"
+                    + "    #ifndef "+projects[loop].toUpperCase()+"INTERNAL\n"
+                    + "        #define _internal public\n"
+                    + "    #else\n"
+                    + "        #define _internal private\n"
+                    + "    #endif\n"
+                    + "#endif\n");
+                }
+            }
+
+            if(this.getOption("AutoGenCombinedLibraryHeader", projects[loop]))
+            {
+                var list :string[]= [];
+                list = this.makeListFiles(this.workspaceRoot+"/"+projects[loop], list, ".hpp");
+                var fileContents = "#ifndef "+projects[loop].toUpperCase()+"_HPP\n"
+                + "#define "+projects[loop].toUpperCase()+"_HPP\n\n";
+                if(internalkey)
+                {
+                    fileContents += "    #undef _internal\n";   
+                    fileContents += "    #define "+projects[loop].toUpperCase()+"INTERNAL\n\n";   
+                }
+                var includeLoop;
+                for(includeLoop = 0; includeLoop < list.length; includeLoop++)
+                {
+                    var shortenedName = list[includeLoop].substring(this.workspaceRoot.length+projects[loop].length+2);
+                    fileContents += "    #include \""+shortenedName+"\"\n";
+                }
+                fileContents += "\n";
+                if(internalkey)
+                {
+                    fileContents += "    #undef _internal\n";   
+                    fileContents += "    #undef "+projects[loop].toUpperCase()+"INTERNAL\n\n";   
+                }
+                fileContents += "#endif //"+projects[loop].toUpperCase()+"_HPP\n";
+                this.writeFile(projects[loop]+"/"+projects[loop]+".hpp",fileContents);
+            }
         }
     }
 
@@ -126,6 +180,8 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
         {
             const libraryNode = new TreeNode("Libraries","libraries","");
             rootNode.addChild(libraryNode, index);
+            const stdLib = new TreeNode("Standard C++ Library", "dependancylibrary","");
+            libraryNode.addChild(stdLib,0);
         }
         index++;
         this.createPath("libraries");
@@ -169,17 +225,14 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
     {
         const projectNode = new TreeNode(projectName, await this.getProjectType(projectName), this.workspaceRoot+"/"+projectName);
         var index = 0;
+
+        const properties = new TreeNode("Properties", "properties",this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake");
+        projectNode.addChild(properties, index);
+        index++;
         
         const dependancies = new TreeNode("Dependancies", "dependancies","");
         projectNode.addChild(dependancies, index);
         index++;
-        
-        if(this.pathExists(this.workspaceRoot+"/"+projectName+"/BuildEvents.cmake"))
-        {
-            const buildevents = new TreeNode("Build Events", "buildevents",this.workspaceRoot+"/"+projectName+"/BuildEvents.cmake");
-            projectNode.addChild(buildevents, index);
-            index++;
-        }
         
         fs.readdirSync(this.workspaceRoot+"/"+projectName).forEach(async file => {
             let fileName = path.basename(file);
@@ -229,7 +282,7 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
     }
 
     //System Calls
-    initilizeGit()
+    private initilizeGit()
     {
         var extension = "";
         if(os.platform() === "win32")
@@ -240,7 +293,46 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
         child_process.exec("git"+extension+" -C \""+this.workspaceRoot+"\" submodule init");
     }
 
+    runCMake()
+    {
+        //mkdir build
+        //cd build
+        //cmake .. -G Ninja
+        //ninja -v
+        ////check bin output
+        this.refresh();
+        //run bin
+    }
+
     //IO Methods
+    async getOption(optionName:string, projectName: string) : Promise<boolean>
+    {
+        var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
+        var retVal = false;
+        if(this.pathExists(fullPath))
+        {
+            const fileStream = fs.createReadStream(fullPath);
+
+            const rl = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity
+            });
+
+            for await (const line of rl)
+            {
+                if(line.indexOf("OPTION("+optionName) !== -1)
+                {
+                    if(line.indexOf("ON)") !== -1)
+                    {
+                        retVal = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
     createPath(pathName: string)
     {
         if(!this.pathExists(this.workspaceRoot+"/"+pathName))
@@ -283,16 +375,13 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
             if(this.pathExists(this.workspaceRoot+"/"+projects[loop]))
             {
                 var list :string[] = [];
-                list = this.makeListCppFiles(this.workspaceRoot+"/"+projects[loop],list);
+                list = this.makeListFiles(this.workspaceRoot+"/"+projects[loop],list,".cpp");
                 var fileIndex;
                 var fileContents = "set(SourceFiles \n";
                 for(fileIndex = 0; fileIndex < list.length; fileIndex++)
                 {
                     var shortenedName = list[fileIndex].substring(this.workspaceRoot.length+projects[loop].length+2);
-                    if(shortenedName.indexOf(".cpp") !== -1)
-                    {
-                        fileContents += shortenedName+"\n";
-                    }
+                    fileContents += shortenedName+"\n";
                 }
                 fileContents += ")";
                 this.writeFile(projects[loop]+"/SourceFiles.cmake",fileContents);
@@ -300,7 +389,7 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
         }
     }
 
-    makeListCppFiles(initialPath: string, list: string[]) : string[]
+    makeListFiles(initialPath: string, list: string[], ext: string) : string[]
     {
         var newList = list;
         if (fs.existsSync(initialPath))
@@ -309,11 +398,14 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
                 const curPath = path.join(initialPath, file);
                 if (fs.lstatSync(curPath).isDirectory())
                 {
-                    newList = this.makeListCppFiles(curPath, newList);
+                    newList = this.makeListFiles(curPath, newList, ext);
                 } 
                 else
                 { 
-                    newList.push(curPath);
+                    if(curPath.indexOf(ext) !== -1)
+                    {
+                        newList.push(curPath);
+                    }
                 }
               });
         }
@@ -380,33 +472,6 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
         }
     }
 
-    addBuildEvents(projectName: string)
-    {
-        this.writeFile(projectName+"/BuildEvents.cmake", "if(${CMAKE_SYSTEM_NAME} STREQUAL \"Windows\")\n"
-        + "add_custom_command(TARGET ${PROJECT_NAME}\n"
-        + "        PRE_BUILD COMMAND\n\n"
-        + "        ### Enter your PRE_BUILD Windows Commandline commands here. ###\n"
-        + "        ## Symbol && can be used to run multiple commands ##\n"
-        + "    )\n"
-        + "    add_custom_command(TARGET ${PROJECT_NAME}\n"
-        + "        POST_BUILD COMMAND\n\n"
-        + "        ### Enter your POST_BUILD Windows Commandline commands here. ###\n"
-        + "        ## Symbol && can be used to run multiple commands ##\n"
-        + "    )\n"
-        + "else()\n"
-        + "    add_custom_command(TARGET ${PROJECT_NAME}\n"
-        + "        PRE_BUILD COMMAND\n\n"
-        + "        ### Enter your PRE_BUILD NON-Windows Commandline commands here. ###\n"
-        + "        ## Symbol && can be used to run multiple commands ##\n"
-        + "    )\n"
-        + "    add_custom_command(TARGET ${PROJECT_NAME}\n"
-        + "        POST_BUILD COMMAND\n\n"
-        + "        ### Enter your POST_BUILD NON-Windows Commandline commands here. ###\n"
-        + "        ## Symbol && can be used to run multiple commands ##\n"
-        + "    )\n"
-        + "endif()");
-    }
-
     async createProject()
     {
         var projectName = await vscode.window.showInputBox({ placeHolder: 'Enter Project Name' });
@@ -428,8 +493,9 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
 
             fs.writeFile(projectRoot+"/SourceFiles.cmake","", (err) =>{});
             
-            let fileContents = "cmake_minimum_required(VERSION ${MinimumCMakeVersion})\n"
-            + "project("+projectName+" VERSION 0.1.0)\n\n"
+            let fileContents = "include(CppExplorerOptions.cmake)\n"
+            + "cmake_minimum_required(VERSION ${MinimumCMakeVersion})\n"
+            + "project(${ProjectName} VERSION 0.1.0)\n\n"
             + "include_directories(\"include\")\n"
             + "include_directories(\"..\")\n\n"
             + "include_directories(\"../libraries\")\n\n"
@@ -445,12 +511,54 @@ export class ExplorerTree implements vscode.TreeDataProvider<TreeNode>
                 fileContents += "add_library(${PROJECT_NAME} SHARED ${SourceFiles})\n"
                 + "add_library(${PROJECT_NAME}_STATIC STATIC ${SourceFiles})\n\n";
             }
+
+            fileContents += "if(${CMAKE_SYSTEM_NAME} STREQUAL \"Windows\")\n"
+            + "    if(NOT ${WindowsPreBuildCommand} STREQUAL \"\")\n"
+            + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+            + "            PRE_BUILD COMMAND\n"
+            + "            ${WindowsPreBuildCommand}\n"
+            + "        )\n"
+            + "    endif()\n"
+            + "    if(NOT ${WindowsPostBuildCommand} STREQUAL \"\")\n"
+            + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+            + "            POST_BUILD COMMAND\n"
+            + "            ${WindowsPostBuildCommand}\n"
+            + "        )\n"
+            + "    endif()\n"
+            + "else()\n"
+            + "    if(NOT ${UnixPreBuildCommand} STREQUAL \"\")\n"
+            + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+            + "            PRE_BUILD COMMAND\n"
+            + "            ${UnixPreBuildCommand}\n"
+            + "        )\n"
+            + "    endif()\n"
+            + "    if(NOT ${UnixPostBuildCommand} STREQUAL \"\")\n"
+            + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+            + "            POST_BUILD COMMAND\n"
+            + "            ${UnixPostBuildCommand}\n"
+            + "        )\n"
+            + "    endif()\n"
+            + "endif()";
+
             this.writeFile(projectName+"/CMakeLists.txt", fileContents);
 
             if(projectType?.label === "Executable")
             {
                 fs.writeFile(projectRoot+"/main.cpp","int main(int argCount, char *argValues[])\n{\n\n    return 0;\n}", (err) =>{});
             }
+
+            this.writeFile(projectName+"/CppExplorerOptions.cmake",
+            "set(ProjectName "+projectName+")\n"
+            + "set(ProjectVersion 1.0.0)\n"
+            + "OPTION(EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n"
+            + "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" ON)\n"
+            + "\n"
+            + "## Symbol && can be used to run multiple commands ##\n"
+            + "set(WindowsPreBuildCommand \"\")\n"
+            + "set(WindowsPostBuildCommand \"\")\n"
+            + "set(UnixPreBuildCommand \"\")\n"
+            + "set(UnixPostBuildCommand \"\")\n"
+            );
         }
         this.refresh();
     }
@@ -599,6 +707,11 @@ export class TreeNode extends vscode.TreeItem
             this.iconPath = new vscode.ThemeIcon('repo');
             this.contextValue = 'library';
         }
+        else if(type === 'dependancylibrary')
+        {
+            this.iconPath = new vscode.ThemeIcon('repo');
+            this.contextValue = 'dependancylibrary';
+        }
         else if(type === 'properties')
         {
             this.tooltip = "Properties";
@@ -611,12 +724,6 @@ export class TreeNode extends vscode.TreeItem
             this.tooltip = "Built Files";
             this.iconPath = new vscode.ThemeIcon('file-binary');
             this.contextValue = 'binaries';
-        }
-        else if(type === 'buildevents')
-        {
-            this.tooltip = "Build Events";
-            this.iconPath = new vscode.ThemeIcon('flame');
-            this.contextValue = 'build_events';
         }
         else if(type === 'license')
         {
