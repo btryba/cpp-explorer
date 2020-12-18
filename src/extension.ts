@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ExplorerTree, TreeNode } from './cppExplorer';
+import { ExplorerTree } from './cppExplorer';
+import { TreeNode } from './TreeNode';
 
 export function activate(context: vscode.ExtensionContext)
 {
