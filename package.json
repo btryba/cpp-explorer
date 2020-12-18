@@ -21,10 +21,20 @@
 				"title": "C++ Explorer: Configure"
 			},
 			{
-				"command": "cppExplorer.deleteEntry",
-				"title": "Delete",
-				"icon": "$(trash)"
+				"command": "cpp-explorer.addBuildEvents",
+				"title": "C++ Explorer: Add Build Events"
 			},
+			{
+				"command": "cpp-explorer.createProject",
+				"title": "C++ Explorer: Create Project"
+			},
+			{
+				"command": "cpp-explorer.addLicense",
+				"title": "C++ Explorer: Add License To Project"
+			},
+
+
+
 			{
 				"command": "cppExplorer.refresh",
 				"title": "Refresh",
@@ -38,15 +48,72 @@
 			{
 				"command": "cppExplorer.addProject",
 				"title": "Add Project",
+				"icon": "$(package)"
+			},
+			{
+				"command": "cppExplorer.addClass",
+				"title": "Add File/Class",
 				"icon": "$(new-file)"
 			},
 			{
 				"command": "cppExplorer.openHpp",
-				"title": ".hpp"
+				"title": "Open Header/Interface (.hpp)",
+				"icon": "$(split-horizontal)"
 			},
 			{
 				"command": "cppExplorer.openCpp",
-				"title": ".cpp"
+				"title": "Open Implementation (.cpp)",
+				"icon": "$(book)"
+			},
+			{
+				"command": "cppExplorer.convertToLib",
+				"title": "Convert Project To Library",
+				"icon": "$(symbol-boolean)"
+			},
+			{
+				"command": "cppExplorer.convertToExe",
+				"title": "Convert Project To Executable",
+				"icon": "$(symbol-boolean)"
+			},
+			{
+				"command": "cppExplorer.addDependancy",
+				"title": "Add Dependancy",
+				"icon": "$(repo-push)"
+			},
+			{
+				"command": "cppExplorer.addProjectFolder",
+				"title": "Add Folder",
+				"icon": "$(file-directory-create)"
+			},
+			{
+				"command": "cppExplorer.deleteBinaries",
+				"title": "Delete Binaries",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "cppExplorer.deleteProject",
+				"title": "Delete Project",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "cppExplorer.makeReadOnlyProject",
+				"title": "Convert Project ReadOnly (Move to Libraries)",
+				"icon": "$(symbol-text)"
+			},
+			{
+				"command": "cppExplorer.makeEditableProject",
+				"title": "Make Library Editable (Make it a Project)",
+				"icon": "$(whole-word)"
+			},
+			{
+				"command": "cppExplorer.removeCmakeData",
+				"title": "Remove All Build Data (CMake must be re-run after this)",
+				"icon": "$(circle-slash)"
+			},
+			{
+				"command": "cppExplorer.deleteFile",
+				"title": "Delete File",
+				"icon": "$(trash)"
 			}
 		],
 		"views": {
@@ -71,17 +138,138 @@
 					"group": "inline"
 				},
 				{
+					"command": "cppExplorer.addProject",
+					"when": "view == cppExplorer && viewItem == workspace"
+				},
+
+				{
 					"command": "cppExplorer.addLibrary",
 					"when": "view == cppExplorer && viewItem == libraries",
 					"group": "inline"
 				},
+
 				{
-					"command": "cppExplorer.openHpp",
-					"when": "view == cppExplorer && viewItem == class"
+					"command": "cppExplorer.addClass",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "inline"
 				},
 				{
+					"command": "cppExplorer.convertToExe",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.deleteProject",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.makeReadOnlyProject",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "inline"
+				},
+
+				{
+					"command": "cppExplorer.addClass",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.convertToLib",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.deleteProject",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "inline"
+				},
+
+				{
+					"command": "cppExplorer.addClass",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+				{
+					"command": "cppExplorer.convertToExe",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+				{
+					"command": "cppExplorer.deleteProject",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+				{
+					"command": "cppExplorer.makeReadOnlyProject",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+				{
+					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+
+				{
+					"command": "cppExplorer.addClass",
+					"when": "view == cppExplorer && viewItem == executable"
+				},
+				{
+					"command": "cppExplorer.convertToLib",
+					"when": "view == cppExplorer && viewItem == executable"
+				},
+				{
+					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == executable"
+				},
+				{
+					"command": "cppExplorer.deleteProject",
+					"when": "view == cppExplorer && viewItem == executable"
+				},
+
+				{
 					"command": "cppExplorer.openCpp",
-					"when": "view == cppExplorer && viewItem == class"
+					"when": "view == cppExplorer && viewItem == class",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.openHpp",
+					"when": "view == cppExplorer && viewItem == class",
+					"group": "inline"
+				},
+
+				{
+					"command": "cppExplorer.addDependancy",
+					"when": "view == cppExplorer && viewItem == dependancies",
+					"group": "inline"
+				},
+				
+				{
+					"command": "cppExplorer.deleteBinaries",
+					"when": "view == cppExplorer && viewItem == binaries",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.removeCmakeData",
+					"when": "view == cppExplorer && viewItem == binaries",
+					"group": "inline"
+				},
+
+
+				{
+					"command": "cppExplorer.deleteFile",
+					"when": "view == cppExplorer && viewItem == file",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.deleteFile",
+					"when": "view == cppExplorer && viewItem == file"
 				}
 			]
 		}
