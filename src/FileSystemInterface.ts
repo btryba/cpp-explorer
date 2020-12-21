@@ -203,27 +203,27 @@ export class FileSystemInterface
         this.workspaceRoot = workspaceRoot;
     }
 
-    createHeaderFile(fullPath:string, projectName: string, className: string)
+    createHeaderFile(relativeWorkspacePath:string, projectName: string, className: string)
     {
-        fs.writeFileSync(fullPath, FileData.headerFile(projectName, className));
+        this.writeFile(relativeWorkspacePath, FileData.headerFile(projectName, className));
     }
 
-    createTemplateFile(fullPath:string, projectName: string, className: string)
+    createTemplateFile(relativeWorkspacePath:string, projectName: string, className: string)
     {
-        fs.writeFileSync(fullPath, FileData.templateFile(fullPath, className));
+        this.writeFile(relativeWorkspacePath, FileData.templateFile(projectName, className));
     }
 
-    createImplementationFile(fullPath:string, projectName: string, className :string)
+    createImplementationFile(relativeWorkspacePath:string, projectName: string, className :string)
     {
-        fs.writeFileSync(fullPath, FileData.implementationFile(projectName, className));
+        this.writeFile(relativeWorkspacePath, FileData.implementationFile(projectName, className));
     }
 
     generateInternalHeader(projectName :string)
     {
-        var internalPath = this.workspaceRoot+"/"+projectName+"/include/InternalKeyword.hpp";
+        var internalPath = projectName+"/include/InternalKeyword.hpp";
         if(!this.pathExists(internalPath))
         {
-            fs.writeFileSync(internalPath, FileData.internalHeader(projectName));
+            this.writeFile(internalPath, FileData.internalHeader(projectName));
         }
     }
     
@@ -239,26 +239,27 @@ export class FileSystemInterface
 
     rootIsValid() : boolean
     {
-        return this.pathExists(this.workspaceRoot+"/CMakeLists.txt");
+        return this.pathExists("CMakeLists.txt");
     }
 
     projectIsValid(projectName :string) : boolean
     {
-        return this.pathExists(this.workspaceRoot+"/"+projectName+"/CMakeLists.txt");
+        return this.pathExists(projectName+"/CMakeLists.txt");
     }
 
-    directoryExists(fullPath: string) : boolean
+    directoryExists(relativeWorkspacePath: string) : boolean
     {
-        if(this.pathExists(fullPath) && fs.lstatSync(fullPath).isDirectory())
+        if(this.pathExists(relativeWorkspacePath) && fs.lstatSync(this.workspaceRoot+"/"+relativeWorkspacePath).isDirectory())
         {
             return true;
         }
         return false;
     }
 
-    getDirectories(fullPath: string) : string[]
+    getDirectories(relativeWorkspacePath: string) : string[]
     {
         var list:string[] = [];
+        var fullPath = this.workspaceRoot+"/"+relativeWorkspacePath;
         var directories = fs.readdirSync(fullPath);
         var loop;
         for(loop = 0; loop < directories.length; loop++)
@@ -274,9 +275,10 @@ export class FileSystemInterface
         return list;
     }
 
-    getFiles(fullPath: string) : string[]
+    getFiles(relativeWorkspacePath: string) : string[]
     {
         var list:string[] = [];
+        var fullPath = this.workspaceRoot+"/"+relativeWorkspacePath;
         var directories = fs.readdirSync(fullPath);
         var loop;
         for(loop = 0; loop < directories.length; loop++)
@@ -298,7 +300,7 @@ export class FileSystemInterface
         var loop;
         for(loop = 0; loop < projects.length; loop++)
         {
-            if(this.pathExists(this.workspaceRoot+"/"+projects[loop]))
+            if(this.pathExists(projects[loop]))
             {
                 var list :string[] = [];
                 list = this.makeListFiles(this.workspaceRoot+"/"+projects[loop],list,".cpp");
@@ -337,11 +339,11 @@ export class FileSystemInterface
         this.writeWorkSpaceFile();
     }
 
-    createPath(relativeProjectPath: string)
+    createPath(relativeWorkspacePath: string)
     {
-        if(!this.pathExists(this.workspaceRoot+"/"+relativeProjectPath))
+        if(!this.pathExists(relativeWorkspacePath))
         {
-            fs.mkdirSync(this.workspaceRoot+"/"+relativeProjectPath);
+            fs.mkdirSync(this.workspaceRoot+"/"+relativeWorkspacePath);
         }
     }
 
@@ -364,7 +366,7 @@ export class FileSystemInterface
     getOption(optionName:string, projectName: string) : boolean
     {
         var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
-        if(this.pathExists(fullPath))
+        if(this.pathExists(projectName+"/CppExplorerOptions.cmake"))
         {
             var result = fs.readFileSync(fullPath).toString();
             var lines = result.split("\n");
@@ -399,25 +401,25 @@ export class FileSystemInterface
         this.deleteFolderRecursive(this.workspaceRoot+"/build");
     }
 
-    private getFileAsLines(filePath: string) : string[]
+    private getFileAsLines(relativeWorkspacePath: string) : string[]
     {
-        var result = fs.readFileSync(filePath).toString();
+        var result = fs.readFileSync(this.workspaceRoot+"/"+relativeWorkspacePath).toString();
         return result.split("\n");
     }
 
-    deleteFolderRecursive(toDelete: string)
+    deleteFolderRecursive(fullPathToDelete: string)
     {
-        if (fs.existsSync(toDelete))
+        if (fs.existsSync(fullPathToDelete))
         {
-            fs.readdirSync(toDelete).forEach((file, index) => {
-            const curPath = path.join(toDelete, file);
+            fs.readdirSync(fullPathToDelete).forEach((file, index) => {
+            const curPath = path.join(fullPathToDelete, file);
             if (fs.lstatSync(curPath).isDirectory())
             { // recurse
                 this.deleteFolderRecursive(curPath);
             } else { // delete file
                 fs.unlinkSync(curPath);
             }});
-            fs.rmdirSync(toDelete);
+            fs.rmdirSync(fullPathToDelete);
         }
     };
 
@@ -445,16 +447,16 @@ export class FileSystemInterface
         this.writeFile(projectName+"/CppExplorerOptions.cmake", FileData.projectOptions(projectName, projectType));
     }
 
-    deleteFile(filePath: string)
+    deleteFile(relativeWorkspacePath: string)
     {
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(this.workspaceRoot+"/"+relativeWorkspacePath);
     }
 
-    private pathExists(path: string): boolean
+    private pathExists(relativeWorkspacePath: string): boolean
     {
         try
         {
-			fs.accessSync(path);
+			fs.accessSync(this.workspaceRoot+"/"+relativeWorkspacePath);
         }
         catch (err)
         {
@@ -490,13 +492,13 @@ export class FileSystemInterface
         this.writeFile("CMakeLists.txt", FileData.workspaceConfig());
     }
 
-    makeListFiles(initialPath: string, list: string[], ext: string) : string[]
+    private makeListFiles(initialFullPath: string, list: string[], ext: string) : string[]
     {
         var newList = list;
-        if (fs.existsSync(initialPath))
+        if (fs.existsSync(initialFullPath))
         {
-            fs.readdirSync(initialPath).forEach((file, index) => {
-                const curPath = path.join(initialPath, file);
+            fs.readdirSync(initialFullPath).forEach((file, index) => {
+                const curPath = path.join(initialFullPath, file);
                 if (fs.lstatSync(curPath).isDirectory())
                 {
                     newList = this.makeListFiles(curPath, newList, ext);
@@ -513,8 +515,8 @@ export class FileSystemInterface
         return newList;
     }
 
-    private writeFile(pathName: string, fileContents: string)
+    private writeFile(relativeWorkspacePath: string, fileContents: string)
     {
-        fs.writeFileSync(this.workspaceRoot+"/"+pathName, fileContents);
+        fs.writeFileSync(this.workspaceRoot+"/"+relativeWorkspacePath, fileContents);
     }
 }

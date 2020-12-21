@@ -13,13 +13,26 @@ export class ExplorerTree extends TreeProvider
     }
 
     //Commands
-    deleteFile(filePath: string)
+    async deleteFile(relativeWorkspacePath: string)
     {
-        if(filePath !== undefined)
+        if(relativeWorkspacePath !== undefined)
         {
-            if(UserInterface.removeFile())
+            if(await UserInterface.removeFile())
             {
-                this.fileSystemInterface.deleteFile(filePath);
+                this.fileSystemInterface.deleteFile(relativeWorkspacePath);
+                this.refresh();
+            }
+        }
+    }
+
+    async addProjectFolder(node: TreeNode)
+    {
+        var folderName = await UserInterface.prompt("Folder Name");
+        if(folderName !== "")
+        {
+            if(!this.fileSystemInterface.directoryExists(node.relativeWorkspacePath+"/"+folderName))
+            {
+                this.fileSystemInterface.createPath(node.relativeWorkspacePath+"/"+folderName);
                 this.refresh();
             }
         }
@@ -77,8 +90,8 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter Class Name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createHeaderFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, fileName);
-                this.fileSystemInterface.createImplementationFile(parent.filePath+"/src/"+fileName+".cpp", parent.name, fileName);
+                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName);
+                this.fileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, fileName);
             }
         }
         else if(fileType === FileType.template)
@@ -86,7 +99,7 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter Class Template Name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createTemplateFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, fileName);
+                this.fileSystemInterface.createTemplateFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName);
             }
         }
         else if(fileType === FileType.hpp)
@@ -94,7 +107,7 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter .hpp file name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createHeaderFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, "");
+                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, "");
             }
         }
         else if(fileType === FileType.cpp)
@@ -102,7 +115,7 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter .cpp file name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createImplementationFile(parent.filePath+"/src/"+fileName+".cpp", parent.name, "");
+                this.fileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, "");
             }
         }
         else

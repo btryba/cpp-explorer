@@ -23,20 +23,20 @@ export enum TreeNodeType
 export class TreeNode extends vscode.TreeItem
 {
     public children: TreeNode[]|undefined;
-    public filePath: string;
-    public subPath: string;
+    public relativeWorkspacePath: string;
+    public fullPath: string;
     public treeNodeType: TreeNodeType;
     public name:string;
 
-    constructor(label: string, type: TreeNodeType, filePath: string, subPath: string)
+    constructor(label: string, type: TreeNodeType, relativeWorkspacePath: string, fullPath:string)
     {
         super(label, vscode.TreeItemCollapsibleState.None);
 
         this.children = [];
-        this.filePath = filePath;
+        this.relativeWorkspacePath = relativeWorkspacePath;
         this.treeNodeType = type;
         this.name = label;
-        this.subPath = subPath;
+        this.fullPath = fullPath;
 
         if(type === TreeNodeType.workSpace)
         {
@@ -102,14 +102,14 @@ export class TreeNode extends vscode.TreeItem
             this.tooltip = label;
             this.iconPath = new vscode.ThemeIcon('file-code');
             this.contextValue = 'file';
-            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
+            this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
         }
         else if(type === TreeNodeType.header)
         {
             this.tooltip = label;
             this.iconPath = new vscode.ThemeIcon('file-text');
             this.contextValue = 'file';
-            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
+            this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
         }
         else if(type === TreeNodeType.folder)
         {
@@ -126,13 +126,13 @@ export class TreeNode extends vscode.TreeItem
             this.iconPath = vscode.ThemeIcon.File;
             this.contextValue = 'file';
             this.description = 'Root File';
-            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
+            this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
         }
         else
         {
             this.iconPath = vscode.ThemeIcon.File;
             this.contextValue = 'file';
-            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
+            this.command = { command: 'cppExplorer.openFileFullPath', title: "Open File", arguments: [this.fullPath] };
         }
     }
 
