@@ -337,11 +337,11 @@ export class FileSystemInterface
         this.writeWorkSpaceFile();
     }
 
-    createPath(pathName: string)
+    createPath(relativeProjectPath: string)
     {
-        if(!this.pathExists(this.workspaceRoot+"/"+pathName))
+        if(!this.pathExists(this.workspaceRoot+"/"+relativeProjectPath))
         {
-            fs.mkdir(this.workspaceRoot+"/"+pathName, (err) => {});
+            fs.mkdirSync(this.workspaceRoot+"/"+relativeProjectPath);
         }
     }
 
@@ -428,18 +428,18 @@ export class FileSystemInterface
             vscode.window.showErrorMessage("Project "+projectName+" already exists.");
             return;
         }
-        var projectRoot = this.workspaceRoot+"/"+projectName;
+
         this.createPath(projectName);
         this.createPath(projectName+"/include");
         this.createPath(projectName+"/src");
     
-        fs.writeFile(projectRoot+"/SourceFiles.cmake","", (err) =>{});
+        this.writeFile(projectName+"/SourceFiles.cmake","");
 
         this.writeFile(projectName+"/CMakeLists.txt", FileData.projectConfig(projectType));
   
         if(projectType === TreeNodeType.executable)
         {
-            fs.writeFile(projectRoot+"/main.cpp", FileData.mainCpp(), (err) =>{});
+            this.writeFile(projectName+"/main.cpp", FileData.mainCpp());
         }
         
         this.writeFile(projectName+"/CppExplorerOptions.cmake", FileData.projectOptions(projectName, projectType));
@@ -515,6 +515,6 @@ export class FileSystemInterface
 
     private writeFile(pathName: string, fileContents: string)
     {
-        fs.writeFile(this.workspaceRoot+"/"+pathName, fileContents, (err) =>{});
+        fs.writeFileSync(this.workspaceRoot+"/"+pathName, fileContents);
     }
 }
