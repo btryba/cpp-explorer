@@ -10,31 +10,33 @@ export enum TreeNodeType
     executable,
     dependancy,
     binaries,
-    template,
+    code,
+    header,
     folder,
     license,
     file,
-    readonlyLibrary
+    readonlyLibrary,
+    rootfile,
+    tests
 }
 
 export class TreeNode extends vscode.TreeItem
 {
     public children: TreeNode[]|undefined;
     public filePath: string;
+    public subPath: string;
     public treeNodeType: TreeNodeType;
+    public name:string;
 
-    constructor(label: string|undefined, type: TreeNodeType, filePath: string)
+    constructor(label: string, type: TreeNodeType, filePath: string, subPath: string)
     {
-        if(label === undefined)
-        {
-            label = '';
-        }
-
         super(label, vscode.TreeItemCollapsibleState.None);
 
         this.children = [];
         this.filePath = filePath;
         this.treeNodeType = type;
+        this.name = label;
+        this.subPath = subPath;
 
         if(type === TreeNodeType.workSpace)
         {
@@ -66,6 +68,11 @@ export class TreeNode extends vscode.TreeItem
             this.iconPath = new vscode.ThemeIcon('server-process');
             this.contextValue = 'executable';
         }
+        else if(type === TreeNodeType.readonlyLibrary)
+        {
+            this.tooltip = "Project: "+label;
+            this.iconPath = new vscode.ThemeIcon('repo');
+        }
         else if(type === TreeNodeType.library)
         {
             this.tooltip = "Project: "+label;
@@ -88,17 +95,38 @@ export class TreeNode extends vscode.TreeItem
             this.tooltip = "License";
             this.iconPath = new vscode.ThemeIcon('law');
             this.contextValue = 'file';
+            this.description = 'Root File';
         }
-        else if(type === TreeNodeType.template)
+        else if(type === TreeNodeType.code)
         {
-            this.tooltip = "Template: "+label;
+            this.tooltip = label;
             this.iconPath = new vscode.ThemeIcon('file-code');
-            this.contextValue = 'template';
+            this.contextValue = 'file';
+            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
+        }
+        else if(type === TreeNodeType.header)
+        {
+            this.tooltip = label;
+            this.iconPath = new vscode.ThemeIcon('file-text');
+            this.contextValue = 'file';
+            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
         }
         else if(type === TreeNodeType.folder)
         {
             this.iconPath = new vscode.ThemeIcon('folder-opened');
             this.contextValue = 'folder';
+        }
+        else if(type === TreeNodeType.tests)
+        {
+            this.iconPath = new vscode.ThemeIcon('beaker');
+            this.contextValue = 'tests';
+        }
+        else if(type === TreeNodeType.rootfile)
+        {
+            this.iconPath = vscode.ThemeIcon.File;
+            this.contextValue = 'file';
+            this.description = 'Root File';
+            this.command = { command: 'cppExplorer.openFile', title: "Open File", arguments: [this.filePath] };
         }
         else
         {

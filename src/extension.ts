@@ -19,7 +19,9 @@ export function activate(context: vscode.ExtensionContext)
 	vscode.commands.registerCommand('cppExplorer.openFile', (url: string) => vscode.window.showTextDocument(vscode.Uri.file(url)));
 	vscode.commands.registerCommand('cppExplorer.deleteBinaries', (node: TreeNode) => cppExplorerInstance.deleteBinaries());
 	vscode.commands.registerCommand('cppExplorer.removeCmakeData', (node: TreeNode) => cppExplorerInstance.removeCmakeData());
-	
+	vscode.commands.registerCommand('cppExplorer.editWorkspaceProperties', (node: TreeNode) => vscode.window.showTextDocument(vscode.Uri.file(vscode.workspace.rootPath+"/CppExplorerOptions.cmake")));
+	vscode.commands.registerCommand('cppExplorer.editProjectProperties', (node: TreeNode) => vscode.window.showTextDocument(vscode.Uri.file(vscode.workspace.rootPath+"/"+node.name+"/CppExplorerOptions.cmake")));
+
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json

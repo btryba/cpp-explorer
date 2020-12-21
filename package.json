@@ -32,6 +32,16 @@
 
 
 			{
+				"command": "cppExplorer.editWorkspaceProperties",
+				"title": "Properties",
+				"icon": "$(wrench)"
+			},
+			{
+				"command": "cppExplorer.editProjectProperties",
+				"title": "Properties",
+				"icon": "$(wrench)"
+			},
+			{
 				"command": "cppExplorer.refresh",
 				"title": "Refresh",
 				"icon": "$(sync)"
@@ -134,6 +144,10 @@
 					"group": "inline"
 				},
 				{
+					"command": "cppExplorer.editWorkspaceProperties",
+					"when": "view == cppExplorer && viewItem == workspace"
+				},
+				{
 					"command": "cppExplorer.addProject",
 					"when": "view == cppExplorer && viewItem == workspace"
 				},
@@ -196,6 +210,10 @@
 					"when": "view == cppExplorer && viewItem == library"
 				},
 				{
+					"command": "cppExplorer.editProjectProperties",
+					"when": "view == cppExplorer && viewItem == library"
+				},
+				{
 					"command": "cppExplorer.convertToExe",
 					"when": "view == cppExplorer && viewItem == library"
 				},
@@ -214,6 +232,10 @@
 
 				{
 					"command": "cppExplorer.addClass",
+					"when": "view == cppExplorer && viewItem == executable"
+				},
+				{
+					"command": "cppExplorer.editProjectProperties",
 					"when": "view == cppExplorer && viewItem == executable"
 				},
 				{

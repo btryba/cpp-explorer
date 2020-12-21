@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {TreeNode, TreeNodeType} from './TreeNode';
-import {UserInterface} from './UserInterface';
+import {UserInterface, FileType} from './UserInterface';
 import {SystemCaller} from './SystemCaller';
 import {TreeProvider} from './TreeProvider';
 
@@ -9,6 +9,7 @@ export class ExplorerTree extends TreeProvider
     constructor(workspaceRoot: any)
     {
         super(workspaceRoot);
+        this.readWorkspace();
     }
 
     //Commands
@@ -59,7 +60,7 @@ export class ExplorerTree extends TreeProvider
     {
         if(projectName !== undefined)
         {
-            if(UserInterface.deleteProject(projectName))
+            if(await UserInterface.deleteProject(projectName))
             {
                 this.fileSystemInterface.deleteFolderRecursive(this.workspaceRoot+"/"+projectName);
                 this.refresh();
@@ -69,20 +70,46 @@ export class ExplorerTree extends TreeProvider
 
      async createClass(parent: TreeNode)
      {
-    //     var types: vscode.QuickPickItem[] = [];
-    //     types.push({"label":"Class", "description" : "(.hpp and .cpp)"});
-    //     types.push({"label": "Class Template", "description" : "(.hpp only)"});
-    //     types.push({"label": "Empty .hpp"});
-    //     types.push({"label": "Empty .cpp"});
-    //     var fileType = await vscode.window.showQuickPick(types,{canPickMany: false});
-    //     const className = await vscode.window.showInputBox({ placeHolder: 'Enter Class Name' });
-    //     if(className !== undefined)
-    //     {
-    //         if(this.getProjects().indexOf(className) === -1)
-    //         {
+        var fileType = await UserInterface.getFileType();
+        var fileName = "";
+        if(fileType === FileType.classType)
+        {
+            fileName = await UserInterface.prompt('Enter Class Name');
+            if(fileName !== "")
+            {
+                this.fileSystemInterface.createHeaderFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, fileName);
+                this.fileSystemInterface.createImplementationFile(parent.filePath+"/src/"+fileName+".cpp", parent.name, fileName);
+            }
+        }
+        else if(fileType === FileType.template)
+        {
+            fileName = await UserInterface.prompt('Enter Class Template Name');
+            if(fileName !== "")
+            {
+                this.fileSystemInterface.createTemplateFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, fileName);
+            }
+        }
+        else if(fileType === FileType.hpp)
+        {
+            fileName = await UserInterface.prompt('Enter .hpp file name');
+            if(fileName !== "")
+            {
+                this.fileSystemInterface.createHeaderFile(parent.filePath+"/include/"+fileName+".hpp", parent.name, "");
+            }
+        }
+        else if(fileType === FileType.cpp)
+        {
+            fileName = await UserInterface.prompt('Enter .cpp file name');
+            if(fileName !== "")
+            {
+                this.fileSystemInterface.createImplementationFile(parent.filePath+"/src/"+fileName+".cpp", parent.name, "");
+            }
+        }
+        else
+        {
+            return;
+        }
 
-    //         }
-    //     }
-    //     this.refresh();
+        this.refresh();
      }
 }

@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
 import {TreeNodeType} from './TreeNode';
 
+
+export enum FileType
+{
+    classType,
+    template,
+    hpp,
+    cpp,
+    error
+}
 export class UserInterface
 {
     static async removeFile() : Promise<boolean>
@@ -33,6 +42,36 @@ export class UserInterface
             }
         }
         return false;
+    }
+
+    static async getFileType() : Promise<FileType>
+    {
+        var types: vscode.QuickPickItem[] = [];
+        types.push({"label":"Class", "description" : "(.hpp and .cpp)"});
+        types.push({"label": "Class Template", "description" : "(.hpp only)"});
+        types.push({"label": "Empty .hpp"});
+        types.push({"label": "Empty .cpp"});
+        var fileType = await vscode.window.showQuickPick(types,{canPickMany: false});
+        if(fileType === undefined)
+        {
+            return FileType.error;
+        }
+        else if(fileType.label === "Class")
+        {
+            return FileType.classType;
+        }
+        else if(fileType.label === "Class Template")
+        {
+            return FileType.template;
+        }
+        else if(fileType.label === "Empty .hpp")
+        {
+            return FileType.hpp;
+        }
+        else //if(fileType.label === "Empty .cpp")
+        {
+            return FileType.cpp;
+        }
     }
 
     static async prompt(promptMessage: string) : Promise<string>

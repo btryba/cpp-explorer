@@ -11,6 +11,51 @@ export class FileSystemInterface
         this.workspaceRoot = workspaceRoot;
     }
 
+    createHeaderFile(fullPath:string, projectName: string, className: string)
+    {
+        var fileContents = "#ifndef "+projectName.toUpperCase()+"_HPP\n"
+        + "#define "+projectName.toUpperCase()+"_HPP\n\n"
+        + "namespace "+projectName+"\n"
+        + "{\n";
+        if(className !== "")
+        {
+            fileContents += "    class "+className+"\n    {\n\n    };\n";
+        }
+        else
+        {
+            fileContents += "\n;";
+        }
+        fileContents += "}\n\n"
+        + "#endif //"+projectName.toUpperCase()+"_HPP";
+        fs.writeFileSync(fullPath, fileContents);
+    }
+
+    createTemplateFile(fullPath:string, projectName: string, className: string)
+    {
+        var fileContents = "#ifndef "+projectName.toUpperCase()+"_HPP\n"
+        + "#define "+projectName.toUpperCase()+"_HPP\n\n"
+        + "namespace "+projectName+"\n"
+        + "{\n";
+        + "    template <>\n";
+        + "    class "+className+"\n    {\n\n    };\n"
+        + "}\n\n"
+        + "#endif //"+projectName.toUpperCase()+"_HPP";
+        fs.writeFileSync(fullPath, fileContents);
+    }
+
+    createImplementationFile(fullPath:string, projectName: string, className :string)
+    {
+        var fileContents = "";
+        if (className !== "")
+        {
+            fileContents += "#include \""+projectName+".hpp\"\n\n";
+        }
+        fileContents += "namespace "+projectName+"\n"
+        + "{\n\n"
+        + "}\n";
+        fs.writeFileSync(fullPath, fileContents);
+    }
+
     generateInternalHeader(projectName :string)
     {
         var internalPath = this.workspaceRoot+"/"+projectName+"/include/InternalKeyword.hpp";
@@ -78,28 +123,36 @@ export class FileSystemInterface
     getDirectories(fullPath: string) : string[]
     {
         var list:string[] = [];
-        fs.readdirSync(fullPath).forEach(async file => {
+        var directories = fs.readdirSync(fullPath);
+        var loop;
+        for(loop = 0; loop < directories.length; loop++)
+        {
+            var file = directories[loop];
             let fileName = path.basename(file);
             var isDirectory = fs.lstatSync(fullPath+"/"+fileName).isDirectory();
             if(isDirectory)
             {
                 list.push(fileName);
             }
-        });
+        }
         return list;
     }
 
     getFiles(fullPath: string) : string[]
     {
         var list:string[] = [];
-        fs.readdirSync(fullPath).forEach(async file => {
+        var directories = fs.readdirSync(fullPath);
+        var loop;
+        for(loop = 0; loop < directories.length; loop++)
+        {
+            var file = directories[loop];
             let fileName = path.basename(file);
             var isDirectory = fs.lstatSync(fullPath+"/"+fileName).isDirectory();
             if(!isDirectory)
             {
                 list.push(fileName);
             }
-        });
+        }
         return list;
     }
 
@@ -141,8 +194,7 @@ export class FileSystemInterface
     createWorkspace()
     {
         this.createPath("libraries");
-        this.writeFile("CppExplorerOptions.cmake","set(MinimumCMakeVersion 3.0.0)\n"
-        + "OPTION(EnableTesting \"Turn on Testing\" ON)\n");
+        this.writeFile("CppExplorerOptions.cmake","set(MinimumCMakeVersion 3.0.0)\n");
         this.writeFile("CppExplorerDependancies.cmake","");
         this.writeFile("CppExplorerProjects.cmake","");
         this.writeFile(".gitignore","/bin/*\n/build/*");
@@ -157,35 +209,33 @@ export class FileSystemInterface
         }
     }
 
-    async getProjectType(projectName: string) : Promise<TreeNodeType>
+    getProjectType(projectName: string) : TreeNodeType
     {
-        const fileStream = fs.createReadStream(this.workspaceRoot+"/"+projectName+"/CMakeLists.txt");
-
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
-
-        for await (const line of rl)
+        var result = fs.readFileSync(this.workspaceRoot+"/"+projectName+"/CMakeLists.txt").toString();
+        var lines = result.split("\n");
+        var loop;
+        for(loop = 0; loop < lines.length; loop++)
         {
-            if(line.indexOf("add_library(") !== -1)
+            if(lines[loop].indexOf("add_library(") !== -1)
             {
                 return TreeNodeType.library;
             }
         }
+        
         return TreeNodeType.executable;
     }
 
-    async getOption(optionName:string, projectName: string) : Promise<boolean>
+    getOption(optionName:string, projectName: string) : boolean
     {
         var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
         if(this.pathExists(fullPath))
         {
-            var list = await this.getFileAsLines(fullPath);
+            var result = fs.readFileSync(fullPath).toString();
+            var lines = result.split("\n");
             var loop;
-            for(loop = 0; loop < list.length; loop++)
+            for(loop = 0; loop < lines.length; loop++)
             {
-                var line = list[loop];
+                var line = lines[loop];
                 if(line.indexOf("OPTION("+optionName) !== -1)
                 {
                     if(line.indexOf(" ON)") !== -1)
@@ -213,20 +263,10 @@ export class FileSystemInterface
         this.deleteFolderRecursive(this.workspaceRoot+"/build");
     }
 
-    private async getFileAsLines(filePath: string) : Promise<string[]>
+    private getFileAsLines(filePath: string) : string[]
     {
-        const fileStream = fs.createReadStream(filePath);
-
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
-        var list:string[] = [];
-        for await (const line of rl)
-        {
-            list.push(line);
-        }
-        return list;
+        var result = fs.readFileSync(filePath).toString();
+        return result.split("\n");
     }
 
     deleteFolderRecursive(toDelete: string)
@@ -245,7 +285,7 @@ export class FileSystemInterface
         }
     };
 
-    async createProject(projectName: string, projectType: TreeNodeType)
+    createProject(projectName: string, projectType: TreeNodeType)
     {
         if(this.getProjects().indexOf(projectName) !== -1)
         {
@@ -313,21 +353,28 @@ export class FileSystemInterface
             fs.writeFile(projectRoot+"/main.cpp","int main(int argCount, char *argValues[])\n{\n\n    return 0;\n}", (err) =>{});
         }
   
-        this.writeFile(projectName+"/CppExplorerOptions.cmake",
-        "set(ProjectName "+projectName+")\n"
+        fileContents = "set(ProjectName "+projectName+")\n"
         + "set(ProjectVersion 1.0.0)\n"
-        + "OPTION(EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n"
-        + "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" ON)\n"
-        + "\n"
+        + "OPTION(EnableTesting \"Turn on Testing\" ON)\n";
+        + "OPTION(EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n";
+        if(projectType === TreeNodeType.executable)
+        {
+            fileContents += "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" OFF)\n";
+        }
+        else
+        {
+            fileContents += "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" ON)\n";
+        }
+        fileContents += "\n"
         + "## Symbol && can be used to run multiple commands ##\n"
         + "set(WindowsPreBuildCommand \"\")\n"
         + "set(WindowsPostBuildCommand \"\")\n"
         + "set(UnixPreBuildCommand \"\")\n"
-        + "set(UnixPostBuildCommand \"\")\n"
-        );
+        + "set(UnixPostBuildCommand \"\")\n";
+        this.writeFile(projectName+"/CppExplorerOptions.cmake", fileContents);
     }
 
-    async deleteFile(filePath: string)
+    deleteFile(filePath: string)
     {
         fs.unlinkSync(filePath);
     }
@@ -344,15 +391,23 @@ export class FileSystemInterface
 
     getProjects() : string[]
     {
-        let projects: string[] = [];
-        fs.readdirSync(this.workspaceRoot).forEach(async file => {
+        var list:string[] = [];
+        var directories = fs.readdirSync(this.workspaceRoot);
+        var loop;
+        for(loop = 0; loop < directories.length; loop++)
+        {
+            var file = directories[loop];
             let fileName = path.basename(file);
-            if(fileName.substring(0,1) !== "." && fileName !== 'libraries' && fileName !== 'build' && fileName !== 'bin' && fs.lstatSync(this.workspaceRoot+"/"+fileName).isDirectory() )
+            var isDirectory = fs.lstatSync(this.workspaceRoot+"/"+fileName).isDirectory();
+            if(isDirectory)
             {
-                projects.push(fileName);
+                if(fileName.substring(0,1) !== "." && fileName !== 'libraries' && fileName !== 'build' && fileName !== 'bin')
+                {
+                    list.push(fileName);
+                }
             }
-        });
-        return projects;
+        }
+        return list;
     }
     
     private writeWorkSpaceFile()
