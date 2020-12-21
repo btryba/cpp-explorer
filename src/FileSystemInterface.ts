@@ -1,40 +1,42 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as readline from 'readline';
 import { TreeNodeType } from './TreeNode';
+import { isIPv4 } from 'net';
 
 class FileData
 {
-    static headerFile(projectName: string, className: string) : string
+    static headerFile(projectName: string, fileName: string, isClass : boolean) : string
     {
-        var fileContents = "#ifndef "+projectName.toUpperCase()+"_HPP\n"
-        + "#define "+projectName.toUpperCase()+"_HPP\n\n"
-        + "namespace "+projectName+"\n"
+        var token = projectName.toUpperCase()+"_"+fileName.toUpperCase()+"_HPP";
+        var fileContents = "#ifndef "+token+"\n"
+        + "#define "+token+"\n\n"
+        + "namespace "+projectName.toLowerCase()+"\n"
         + "{\n";
-        if(className !== "")
+        if(fileName !== "" && isClass)
         {
-            fileContents += "    class "+className+"\n    {\n\n    };\n";
+            fileContents += "    class "+fileName+"\n    {\n\n    };\n";
         }
         else
         {
             fileContents += "\n;";
         }
         fileContents += "}\n\n"
-        + "#endif //"+projectName.toUpperCase()+"_HPP";
+        + "#endif //"+token;
         return fileContents;
     }
 
-    static templateFile(projectName: string, className: string) :string
+    static templateFile(projectName: string, fileName: string) :string
     {
-        return "#ifndef "+projectName.toUpperCase()+"_HPP\n"
-        + "#define "+projectName.toUpperCase()+"_HPP\n\n"
-        + "namespace "+projectName+"\n"
+        var token = projectName.toUpperCase()+"_"+fileName.toUpperCase()+"_HPP";
+        return "#ifndef "+token+"\n"
+        + "#define "+token+"\n\n"
+        + "namespace "+projectName.toLowerCase()+"\n"
         + "{\n"
-        + "    template <>\n"
-        + "    class "+className+"\n    {\n\n    };\n"
+        + "    template <typename T>\n"
+        + "    class "+fileName+"\n    {\n\n    };\n"
         + "}\n\n"
-        + "#endif //"+projectName.toUpperCase()+"_HPP";
+        + "#endif //"+token;
     }
 
     static implementationFile(projectName: string, className: string) : string
@@ -42,9 +44,9 @@ class FileData
         var fileContents = "";
         if (className !== "")
         {
-            fileContents += "#include \""+projectName+".hpp\"\n\n";
+            fileContents += "#include \""+className+".hpp\"\n\n";
         }
-        fileContents += "namespace "+projectName+"\n"
+        fileContents += "namespace "+projectName.toLowerCase()+"\n"
         + "{\n\n"
         + "}\n";
         return fileContents;
@@ -90,52 +92,74 @@ class FileData
 
     static projectConfig(projectType: TreeNodeType) : string
     {
-        var fileContents = "include(CppExplorerOptions.cmake)\n"
-        + "cmake_minimum_required(VERSION ${MinimumCMakeVersion})\n"
-        + "project(${ProjectName} VERSION 0.1.0)\n\n"
-        + "include_directories(\"include\")\n"
-        + "include_directories(\"..\")\n\n"
-        + "include_directories(\"../libraries\")\n\n"
+        var fileContents = "INCLUDE(CppExplorerOptions.cmake)\n"
+        + "CMAKE_MINIMUM_REQUIRED(VERSION ${CppEx_MinimumCMakeVersion})\n"
+        + "PROJECT(${CppEx_ProjectName} VERSION ${CppEx_ProjectVersion})\n\n"
+        + "INCLUDE_DIRECTORIES(\"include\")\n"
+        + "INCLUDE_DIRECTORIES(\"..\")\n\n"
+        + "INCLUDE_DIRECTORIES(\"../libraries\")\n\n"
         + "#Add all the source files to build library\n"
-        + "include(\"${CMAKE_CURRENT_SOURCE_DIR}/SourceFiles.cmake\")\n\n";
+        + "INCLUDE(\"${CMAKE_CURRENT_SOURCE_DIR}/SourceFiles.cmake\")\n\n";
         
         if(projectType === TreeNodeType.executable)
         {
-            fileContents += "add_executable(${PROJECT_NAME} ${SourceFiles})\n\n";
+            fileContents += "ADD_EXECUTABLE(${PROJECT_NAME} ${CppEx_SourceFiles})\n\n";
         }
         else
         {
-            fileContents += "add_library(${PROJECT_NAME} SHARED ${SourceFiles})\n"
-            + "add_library(${PROJECT_NAME}_STATIC STATIC ${SourceFiles})\n\n";
+            fileContents += "ADD_LIBRARY(${PROJECT_NAME} SHARED ${CppEx_SourceFiles})\n"
+            + "ADD_LIBRARY(${PROJECT_NAME}_STATIC STATIC ${CppEx_SourceFiles})\n\n";
         }
     
-        fileContents += "if(${CMAKE_SYSTEM_NAME} STREQUAL \"Windows\")\n"
-        + "    if(NOT ${WindowsPreBuildCommand} STREQUAL \"\")\n"
-        + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+        fileContents += "IF(${CMAKE_SYSTEM_NAME} STREQUAL \"Windows\")\n"
+        + "    IF(NOT ${CppEx_WindowsPreBuildCommand} STREQUAL \"\")\n"
+        + "        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME}\n"
         + "            PRE_BUILD COMMAND\n"
-        + "            ${WindowsPreBuildCommand}\n"
+        + "            ${CppEx_WindowsPreBuildCommand}\n"
         + "        )\n"
-        + "    endif()\n"
-        + "    if(NOT ${WindowsPostBuildCommand} STREQUAL \"\")\n"
-        + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+        + "    ENDIF()\n"
+        + "    IF(NOT ${CppEx_WindowsPostBuildCommand} STREQUAL \"\")\n"
+        + "        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME}\n"
         + "            POST_BUILD COMMAND\n"
-        + "            ${WindowsPostBuildCommand}\n"
+        + "            ${CppEx_WindowsPostBuildCommand}\n"
         + "        )\n"
-        + "    endif()\n"
-        + "else()\n"
-        + "    if(NOT ${UnixPreBuildCommand} STREQUAL \"\")\n"
-        + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+        + "    ENDIF()\n"
+        + "ELSE()\n"
+        + "    IF(NOT ${CppEx_UnixPreBuildCommand} STREQUAL \"\")\n"
+        + "        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME}\n"
         + "            PRE_BUILD COMMAND\n"
-        + "            ${UnixPreBuildCommand}\n"
+        + "            ${CppEx_UnixPreBuildCommand}\n"
         + "        )\n"
-        + "    endif()\n"
-        + "    if(NOT ${UnixPostBuildCommand} STREQUAL \"\")\n"
-        + "        add_custom_command(TARGET ${PROJECT_NAME}\n"
+        + "    ENDIF()\n"
+        + "    IF(NOT ${CppEx_UnixPostBuildCommand} STREQUAL \"\")\n"
+        + "        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME}\n"
         + "            POST_BUILD COMMAND\n"
-        + "            ${UnixPostBuildCommand}\n"
+        + "            ${CppEx_UnixPostBuildCommand}\n"
         + "        )\n"
-        + "    endif()\n"
-        + "endif()";
+        + "    ENDIF()\n"
+        + "endif()\n\n"
+        + "IF (CMAKE_CXX_COMPILER_ID STREQUAL \"Clang\")\n"
+        + "    IF (CppEx_WarningAsError)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} -Werror\")\n"
+        + "    ENDIF()\n"
+        + "    IF (CppEx_AllWarnings)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} -Wall\")\n"
+        + "    ENDIF()\n"
+        + "ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL \"GNU\")\n"
+        + "    IF (CppEx_WarningAsError)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} -Werror\")\n"
+        + "    ENDIF()\n"
+        + "    IF (CppEx_AllWarnings)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} -Wall\")\n"
+        + "    ENDIF()\n"
+        + "ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL \"MSVC\")\n"
+        + "    IF (CppEx_WarningAsError)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} /WX\")\n"
+        + "    ENDIF()\n"
+        + "    IF (CppEx_AllWarnings)\n"
+        + "        SET(CMAKE_CXX_FLAGS  \"${CMAKE_CXX_FLAGS} /Wall\")\n"
+        + "    ENDIF()\n"
+        + "ENDIF()";
         return fileContents;
     }
 
@@ -150,49 +174,72 @@ class FileData
 
     static projectOptions(projectName: string, projectType: TreeNodeType) : string
     {
-        var fileContents = "set(ProjectName "+projectName+")\n"
-        + "set(ProjectVersion 1.0.0)\n"
-        + "OPTION(EnableTesting \"Turn on Testing\" ON)\n";
-        + "OPTION(EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n";
+        var fileContents = "SET(CppEx_ProjectName "+projectName+")\n"
+        + "SET(CppEx_ProjectVersion 1.0.0)\n"
+        + "OPTION(CppEx_EnableTesting \"Turn on Testing\" ON)\n"
+        + "OPTION(CppEx_TestingSectionVisible \"Testing section visibility\" ON)\n"
+        + "OPTION(CppEx_EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n";
         if(projectType === TreeNodeType.executable)
         {
-            fileContents += "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" OFF)\n";
+            fileContents += "OPTION(CppEx_AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" OFF)\n";
         }
         else
         {
-            fileContents += "OPTION(AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" ON)\n";
+            fileContents += "OPTION(CppEx_AutoGenCombinedLibraryHeader \"For library projects, create a combined header\" ON)\n";
         }
-        fileContents += "\n"
+        fileContents += "\n\n"
         + "## Symbol && can be used to run multiple commands ##\n"
-        + "set(WindowsPreBuildCommand \"\")\n"
-        + "set(WindowsPostBuildCommand \"\")\n"
-        + "set(UnixPreBuildCommand \"\")\n"
-        + "set(UnixPostBuildCommand \"\")\n";
+        + "SET(CppEx_WindowsPreBuildCommand \"\")\n"
+        + "SET(CppEx_WindowsPostBuildCommand \"\")\n"
+        + "SET(CppEx_UnixPreBuildCommand \"\")\n"
+        + "SET(CppEx_UnixPostBuildCommand \"\")\n\n"
+        + "OPTION(CppEx_WarningAsError \"Treat Warnings as Errors\" OFF)\n"
+        + "OPTION(CppEx_AllWarnings \"Show All Warnings\" OFF)\n";
         return fileContents;
     }
 
     static workspaceConfig() : string
     {
-        return "include(CppExplorerOptions.cmake)\n"
-        + "cmake_minimum_required(VERSION ${MinimumCMakeVersion})\n"
-        + "project("+vscode.workspace.name+" VERSION 0.1.0)\n\n"
-        + "include(CppExplorerDependancies.cmake)\n\n"
-        + "if(${EnableTesting})\n"
-        + "    include(CTest)\n"
-        + "    enable_testing()\n"
-        + "endif()\n\n"
+        return "INCLUDE(CppExplorerOptions.cmake)\n"
+        + "CMAKE_MINIMUM_REQUIRED(VERSION ${CppEx_MinimumCMakeVersion})\n"
+        + "PROJECT("+vscode.workspace.name+" VERSION 0.1.0)\n\n"
+        + "INCLUDE(CppExplorerDependancies.cmake)\n\n"
+        + "INCLUDE(CTest)\n"
+        + "ENABLE_TESTING()\n\n"
         + "#Determine if 32 or 64 bit\n"
-        + "set(OSBitness 32)\n"
-        + "if(CMAKE_SIZEOF_VOID_P EQUAL 8)\n"
-        + "    set(OSBitness 64)\n"
-        + "endif()\n\n"
+        + "SET(OSBitness 32)\n"
+        + "IF(CMAKE_SIZEOF_VOID_P EQUAL 8)\n"
+        + "    SET(OSBitness 64)\n"
+        + "ENDIF()\n\n"
         + "#Save outputs into bin folder\n"
-        + "set(FullOutputDir \"${CMAKE_SOURCE_DIR}/bin/${CMAKE_SYSTEM_NAME}${OSBitness}/${CMAKE_BUILD_TYPE}\")\n"
-        + "set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \"${FullOutputDir}/static libs\")\n"
-        + "set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${FullOutputDir})\n"
-        + "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${FullOutputDir})\n"
-        + "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${FullOutputDir})\n\n"
-        + "include(CppExplorerProjects.cmake)";
+        + "SET(CppEx_FullOutputDir \"${CMAKE_SOURCE_DIR}/bin/${CMAKE_SYSTEM_NAME}${OSBitness}/${CMAKE_BUILD_TYPE}\")\n"
+        + "SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \"${CppEx_FullOutputDir}/static libs\")\n"
+        + "SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CppEx_FullOutputDir})\n"
+        + "SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CppEx_FullOutputDir})\n"
+        + "SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CppEx_FullOutputDir})\n\n"
+        + "INCLUDE(CppExplorerProjects.cmake)";
+    }
+
+    static batchTestCpp() :string
+    {
+        {
+            return "#include <string.h>\n\n"
+            + "int main(int argCount, char *argValues[])\n"
+            + "{\n"
+            + "    if(strcmp(argValues[1], \"1\")\n"
+            + "    {\n"
+            + "        //Successful Test Case Example\n"
+            + "        exit(0);\n"
+            + "    }\n"
+            + "    else\n"
+            + "    {\n"
+            + "        //Failed Test Case Example\n"
+            + "        exit(1);\n"
+            + "    }\n"
+            + "    //Return a failure since it shouldn't get here.\n"
+            + "    return 1;\n"
+            + "}";
+        }
     }
 }
 
@@ -203,9 +250,14 @@ export class FileSystemInterface
         this.workspaceRoot = workspaceRoot;
     }
 
-    createHeaderFile(relativeWorkspacePath:string, projectName: string, className: string)
+    createLicense(projectName: string)
     {
-        this.writeFile(relativeWorkspacePath, FileData.headerFile(projectName, className));
+        this.writeFile(projectName+"/LICENSE","");
+    }
+    
+    createHeaderFile(relativeWorkspacePath:string, projectName: string, fileName: string, isClass:boolean)
+    {
+        this.writeFile(relativeWorkspacePath, FileData.headerFile(projectName, fileName, isClass));
     }
 
     createTemplateFile(relativeWorkspacePath:string, projectName: string, className: string)
@@ -225,6 +277,23 @@ export class FileSystemInterface
         {
             this.writeFile(internalPath, FileData.internalHeader(projectName));
         }
+    }
+
+    createMinimumProjectFolders(projectName: string)
+    {
+        this.createPath(projectName+"/include");
+        this.createPath(projectName+"/src");
+    }
+
+    addProjectFolder(currentRelativeWorkspacePath: string, newFolderName: string)
+    {
+        this.createPath(currentRelativeWorkspacePath+"/"+newFolderName);
+    }
+
+    addBatchTest(projectName:string, batchTestName: string)
+    {
+        this.createPath(projectName+"/tests");
+        this.writeFile(projectName+"/tests/"+batchTestName+".cpp", FileData.batchTestCpp());
     }
     
     generateCombinedHeader(projectName :string)
@@ -305,7 +374,7 @@ export class FileSystemInterface
                 var list :string[] = [];
                 list = this.makeListFiles(this.workspaceRoot+"/"+projects[loop],list,".cpp");
                 var fileIndex;
-                var fileContents = "set(SourceFiles \n";
+                var fileContents = "SET(CppEx_SourceFiles \n";
                 for(fileIndex = 0; fileIndex < list.length; fileIndex++)
                 {
                     var shortenedName = list[fileIndex].substring(this.workspaceRoot.length+projects[loop].length+2);
@@ -317,14 +386,91 @@ export class FileSystemInterface
         }
     }
 
+    projectLoaded(projectName: string) : boolean
+    {
+        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
+        var loop;
+        var lines :string[] = [];
+        for(loop = 0; loop < currentLines.length; loop++)
+        {
+            var line = currentLines[loop];
+            var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
+            if(line.indexOf(search) !== -1)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    unloadProject(projectName: string)
+    {
+        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
+        var loop;
+        var lines :string[] = [];
+        for(loop = 0; loop < currentLines.length; loop++)
+        {
+            var line = currentLines[loop];
+            var search = "ADD_SUBDIRECTORY(\""+projectName+"\")";
+            if(line.indexOf(search) !== -1)
+            {
+                lines.push("#ADD_SUBDIRECTORY(\""+projectName+"\")");
+            }
+            else
+            {
+                lines.push(currentLines[loop]);
+            }
+        }
+        this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
+    }
+
+    reloadProject(projectName: string)
+    {
+        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
+        var loop;
+        var lines :string[] = [];
+        for(loop = 0; loop < currentLines.length; loop++)
+        {
+            var line = currentLines[loop];
+            var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
+            if(line.indexOf(search) !== -1)
+            {
+                lines.push("ADD_SUBDIRECTORY(\""+projectName+"\")");
+            }
+            else
+            {
+                lines.push(currentLines[loop]);
+            }
+        }
+        this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
+    }
+
     updateExplorerProjectsFile()
     {
         var projects = this.getProjects();
+        var excludedProject :string[] = [];
+        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
         var loop;
+        for(loop = 0; loop < currentLines.length; loop++)
+        {
+            var line = currentLines[loop];
+            var search = "#ADD_SUBDIRECTORY(";
+            if(line.indexOf(search) !== -1)
+            {
+                excludedProject.push(line.substring(search.length+1, line.length-2));
+            }
+        }
         var fileContents = "";
         for(loop = 0; loop < projects.length; loop++)
         {
-            fileContents += "add_subdirectory(\""+projects[loop]+"\")\n";
+            if(excludedProject.indexOf(projects[loop]) === -1)
+            {
+                fileContents += "ADD_SUBDIRECTORY(\""+projects[loop]+"\")\n";
+            }
+            else
+            {
+                fileContents += "#ADD_SUBDIRECTORY(\""+projects[loop]+"\")\n";
+            }
         }
         this.writeFile("CppExplorerProjects.cmake", fileContents);
     }
@@ -332,7 +478,7 @@ export class FileSystemInterface
     createWorkspace()
     {
         this.createPath("libraries");
-        this.writeFile("CppExplorerOptions.cmake","set(MinimumCMakeVersion 3.0.0)\n");
+        this.writeFile("CppExplorerOptions.cmake","SET(CppEx_MinimumCMakeVersion 3.0.0)\n");
         this.writeFile("CppExplorerDependancies.cmake","");
         this.writeFile("CppExplorerProjects.cmake","");
         this.writeFile(".gitignore","/bin/*\n/build/*");
@@ -403,8 +549,16 @@ export class FileSystemInterface
 
     private getFileAsLines(relativeWorkspacePath: string) : string[]
     {
-        var result = fs.readFileSync(this.workspaceRoot+"/"+relativeWorkspacePath).toString();
-        return result.split("\n");
+        try
+        {
+            var result = fs.readFileSync(this.workspaceRoot+"/"+relativeWorkspacePath).toString();
+            result = result.replace("\r",""); //get rid of windows line endings
+            return result.split("\n");
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     deleteFolderRecursive(fullPathToDelete: string)
@@ -517,6 +671,77 @@ export class FileSystemInterface
 
     private writeFile(relativeWorkspacePath: string, fileContents: string)
     {
-        fs.writeFileSync(this.workspaceRoot+"/"+relativeWorkspacePath, fileContents);
+        if(relativeWorkspacePath.indexOf(this.workspaceRoot) === -1)
+        {
+            fs.writeFileSync(this.workspaceRoot+"/"+relativeWorkspacePath, fileContents);
+        }
+        else
+        {
+            fs.writeFileSync(relativeWorkspacePath, fileContents);
+        }
+    }
+
+    private readListFromCMake(relativeWorkspacePath: string, variable: string) : string[]
+    {
+        var lines = this.getFileAsLines(relativeWorkspacePath);
+        var loop;
+        var foundVariable = false;
+        var result : string[] = [];
+        for(loop = 0; loop < lines.length; loop++)
+        {
+            let line = lines[loop];
+            let searchString = "SET("+variable;
+            if(foundVariable)
+            {
+                let shortened = line.substring(searchString.length);
+                if(line.indexOf(")") === -1)
+                {
+                    var subList = shortened.split(" ");
+                    result.concat(subList);
+                }
+                else
+                {
+                    var subList = shortened.split(" ");
+                    result.concat(subList);
+                    break;
+                }
+            }
+            if(line.indexOf(searchString) !== -1)
+            {
+                foundVariable = true;
+                let shortened = line.substring(searchString.length);
+                if(line.indexOf(")") === -1)
+                {
+                    var subList = shortened.split(" ");
+                    result.concat(subList);
+                }
+                else
+                {
+                    var subList = shortened.split(" ");
+                    result.concat(subList);
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private writeListForCMake(variable: string, list: string[]) : string
+    {
+        var fileContents = "SET("+variable+" ";
+        var loop;
+        for(loop = 0; loop < list.length; loop++)
+        {
+            fileContents += list[loop];
+            if(loop === list.length-1)
+            {
+                fileContents += ")\n";
+            }
+            else
+            {
+                fileContents += "\n";
+            }
+        }
+        return fileContents;
     }
 }

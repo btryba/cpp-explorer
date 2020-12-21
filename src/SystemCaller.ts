@@ -14,14 +14,13 @@ export class SystemCaller
         child_process.exec("git"+extension+" -C \""+workspaceRoot+"\" submodule init");
     }
 
-    runCMake()
+    static runCMake(workspaceRoot :string)
     {
-        //mkdir build
-        //cd build
-        //cmake .. -G Ninja
-        //ninja -v
-        ////check bin output
-        //this.refresh();
-        //run bin
+        var extension = "";
+        if(os.platform() === "win32")
+        {
+            extension = ".exe";
+        }
+        child_process.exec("cmake"+extension+" -S "+workspaceRoot+" -B "+workspaceRoot+"/build -G Ninja");
     }
 }

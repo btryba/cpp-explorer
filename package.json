@@ -11,14 +11,15 @@
 	],
 	"activationEvents": [
 		"onView:cppExplorer",
-		"onCommand:cpp-explorer.configure"
+		"onCommand:cpp-explorer.initializeWorkspace"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "cpp-explorer.configure",
-				"title": "C++ Explorer: Configure"
+				"command": "cpp-explorer.initializeWorkspace",
+				"title": "C++ Explorer: Initialize Workspace",
+				"icon": "$(files)"
 			},
 			{
 				"command": "cpp-explorer.createProject",
@@ -28,6 +29,10 @@
 				"command": "cpp-explorer.addLicense",
 				"title": "C++ Explorer: Add License To Project"
 			},
+			{
+				"command": "cppExplorer.addLicense",
+				"title": "Add License To Project"
+			},
 
 
 
@@ -35,6 +40,16 @@
 				"command": "cppExplorer.editWorkspaceProperties",
 				"title": "Properties",
 				"icon": "$(wrench)"
+			},
+			{
+				"command": "cppExplorer.projectUnload",
+				"title": "Unload Project",
+				"icon": "$(discard)"
+			},
+			{
+				"command": "cppExplorer.projectReload",
+				"title": "Reload Project",
+				"icon": "$(go-to-file)"
 			},
 			{
 				"command": "cppExplorer.editProjectProperties",
@@ -125,6 +140,11 @@
 				"command": "cppExplorer.addBatchTest",
 				"title": "Add Batch Test",
 				"icon": "$(expand-all)"
+			},
+			{
+				"command": "cppExplorer.editTestingConfig",
+				"title": "Properties",
+				"icon": "$(pencil)"
 			}
 		],
 		"views": {
@@ -140,6 +160,10 @@
 				{
 					"command": "cppExplorer.refresh",
 					"group": "navigation"
+				},
+				{
+					"command": "cpp-explorer.initializeWorkspace",
+					"group": "navigation"
 				}
 			],
 			"view/item/context": [
@@ -149,12 +173,33 @@
 					"group": "inline"
 				},
 				{
-					"command": "cppExplorer.editWorkspaceProperties",
-					"when": "view == cppExplorer && viewItem == workspace"
+					"command": "cppExplorer.addProject",
+					"when": "view == cppExplorer && viewItem == workspace",
+					"group": "workspace"
 				},
 				{
-					"command": "cppExplorer.addProject",
-					"when": "view == cppExplorer && viewItem == workspace"
+					"command": "cppExplorer.editWorkspaceProperties",
+					"when": "view == cppExplorer && viewItem == workspace",
+					"group": "workspace@1"
+				},
+
+				{
+					"command": "cppExplorer.projectReload",
+					"when": "view == cppExplorer && viewItem == unloadedLibrary",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.projectReload",
+					"when": "view == cppExplorer && viewItem == unloadedLibrary"
+				},
+				{
+					"command": "cppExplorer.projectReload",
+					"when": "view == cppExplorer && viewItem == unloadedExecutable",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.projectReload",
+					"when": "view == cppExplorer && viewItem == unloadedExecutable"
 				},
 
 				{
@@ -180,48 +225,79 @@
 
 				{
 					"command": "cppExplorer.addClass",
-					"when": "view == cppExplorer && viewItem == library"
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library"
 				},
 				{
-					"command": "cppExplorer.editProjectProperties",
-					"when": "view == cppExplorer && viewItem == library"
-				},
-				{
-					"command": "cppExplorer.convertToExe",
-					"when": "view == cppExplorer && viewItem == library"
-				},
-				{
-					"command": "cppExplorer.deleteProject",
-					"when": "view == cppExplorer && viewItem == library"
-				},
-				{
-					"command": "cppExplorer.makeReadOnlyProject",
-					"when": "view == cppExplorer && viewItem == library"
+					"command": "cppExplorer.addLicense",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library"
 				},
 				{
 					"command": "cppExplorer.addProjectFolder",
-					"when": "view == cppExplorer && viewItem == library"
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library"
+				},
+				{
+					"command": "cppExplorer.convertToExe",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library@1"
+				},
+				{
+					"command": "cppExplorer.deleteProject",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library@1"
+				},
+				{
+					"command": "cppExplorer.projectUnload",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library@1"
+				},
+				{
+					"command": "cppExplorer.makeReadOnlyProject",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library@1"
+				},
+				{
+					"command": "cppExplorer.editProjectProperties",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library@2"
 				},
 
 				{
 					"command": "cppExplorer.addClass",
-					"when": "view == cppExplorer && viewItem == executable"
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable"
 				},
 				{
 					"command": "cppExplorer.editProjectProperties",
-					"when": "view == cppExplorer && viewItem == executable"
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable@2"
 				},
 				{
 					"command": "cppExplorer.convertToLib",
-					"when": "view == cppExplorer && viewItem == executable"
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable@1"
+				},
+				{
+					"command": "cppExplorer.addLicense",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable"
 				},
 				{
 					"command": "cppExplorer.addProjectFolder",
-					"when": "view == cppExplorer && viewItem == executable"
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable"
 				},
 				{
 					"command": "cppExplorer.deleteProject",
-					"when": "view == cppExplorer && viewItem == executable"
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable@1"
+				},
+				{
+					"command": "cppExplorer.projectUnload",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable@1"
 				},
 
 				{
@@ -233,6 +309,14 @@
 					"command": "cppExplorer.openHpp",
 					"when": "view == cppExplorer && viewItem == class",
 					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.openCpp",
+					"when": "view == cppExplorer && viewItem == class"
+				},
+				{
+					"command": "cppExplorer.openHpp",
+					"when": "view == cppExplorer && viewItem == class"
 				},
 
 				{
@@ -266,6 +350,14 @@
 					"command": "cppExplorer.deleteFile",
 					"when": "view == cppExplorer && viewItem == file"
 				},
+				{
+					"command": "cppExplorer.deleteFile",
+					"when": "view == cppExplorer && viewItem == code"
+				},
+				{
+					"command": "cppExplorer.deleteFile",
+					"when": "view == cppExplorer && viewItem == header"
+				},
 
 				{
 					"command": "cppExplorer.addProjectFolder",
@@ -280,6 +372,10 @@
 					"command": "cppExplorer.addBatchTest",
 					"when": "view == cppExplorer && viewItem == tests",
 					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.editTestingConfig",
+					"when": "view == cppExplorer && viewItem == tests"
 				}
 			]
 		}

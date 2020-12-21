@@ -16,8 +16,9 @@ export enum TreeNodeType
     license,
     file,
     readonlyLibrary,
-    rootfile,
-    tests
+    tests,
+    unloadedLibrary,
+    unloadedExecutable
 }
 
 export class TreeNode extends vscode.TreeItem
@@ -46,7 +47,7 @@ export class TreeNode extends vscode.TreeItem
         }
         else if(type === TreeNodeType.libraries)
         {
-            this.tooltip = "Lirbraries";
+            this.tooltip = "Libraries";
             this.iconPath = new vscode.ThemeIcon('library');
             this.contextValue = 'libraries';
         }
@@ -58,7 +59,7 @@ export class TreeNode extends vscode.TreeItem
         }
         else if(type === TreeNodeType.classType)
         {
-            this.tooltip = "Class: "+label;
+            this.tooltip = this.relativeWorkspacePath;
             this.iconPath = new vscode.ThemeIcon('symbol-class');
             this.contextValue = 'class';
         }
@@ -67,6 +68,13 @@ export class TreeNode extends vscode.TreeItem
             this.tooltip = "Project: "+label;
             this.iconPath = new vscode.ThemeIcon('server-process');
             this.contextValue = 'executable';
+        }
+        else if(type === TreeNodeType.unloadedExecutable)
+        {
+            this.tooltip = "Project: "+label;
+            this.description = "(unloaded)";
+            this.iconPath = new vscode.ThemeIcon('server-process');
+            this.contextValue = 'unloadedExecutable';
         }
         else if(type === TreeNodeType.readonlyLibrary)
         {
@@ -78,6 +86,13 @@ export class TreeNode extends vscode.TreeItem
             this.tooltip = "Project: "+label;
             this.iconPath = new vscode.ThemeIcon('repo');
             this.contextValue = 'library';
+        }
+        else if(type === TreeNodeType.unloadedLibrary)
+        {
+            this.tooltip = "Project: "+label;
+            this.description = "(unloaded)";
+            this.iconPath = new vscode.ThemeIcon('repo');
+            this.contextValue = 'unloadedLibrary';
         }
         else if(type === TreeNodeType.dependancy)
         {
@@ -92,27 +107,27 @@ export class TreeNode extends vscode.TreeItem
         }
         else if(type === TreeNodeType.license)
         {
-            this.tooltip = "License";
+            this.tooltip = this.relativeWorkspacePath;
             this.iconPath = new vscode.ThemeIcon('law');
             this.contextValue = 'file';
-            this.description = 'Root File';
         }
         else if(type === TreeNodeType.code)
         {
-            this.tooltip = label;
+            this.tooltip = this.relativeWorkspacePath;
             this.iconPath = new vscode.ThemeIcon('file-code');
-            this.contextValue = 'file';
+            this.contextValue = 'code';
             this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
         }
         else if(type === TreeNodeType.header)
         {
-            this.tooltip = label;
+            this.tooltip = this.relativeWorkspacePath;
             this.iconPath = new vscode.ThemeIcon('file-text');
-            this.contextValue = 'file';
+            this.contextValue = 'header';
             this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
         }
         else if(type === TreeNodeType.folder)
         {
+            this.tooltip = relativeWorkspacePath;
             this.iconPath = new vscode.ThemeIcon('folder-opened');
             this.contextValue = 'folder';
         }
@@ -121,15 +136,9 @@ export class TreeNode extends vscode.TreeItem
             this.iconPath = new vscode.ThemeIcon('beaker');
             this.contextValue = 'tests';
         }
-        else if(type === TreeNodeType.rootfile)
-        {
-            this.iconPath = vscode.ThemeIcon.File;
-            this.contextValue = 'file';
-            this.description = 'Root File';
-            this.command = { command: 'cppExplorer.openProjectFile', title: "Open File", arguments: [this.relativeWorkspacePath] };
-        }
         else
         {
+            this.tooltip = this.relativeWorkspacePath;
             this.iconPath = vscode.ThemeIcon.File;
             this.contextValue = 'file';
             this.command = { command: 'cppExplorer.openFileFullPath', title: "Open File", arguments: [this.fullPath] };
@@ -213,6 +222,10 @@ export class TreeNode extends vscode.TreeItem
 
     equals(otherNode: TreeNode) : boolean
     {
+        if(this.contextValue !== otherNode.contextValue)
+        {
+            return false;
+        }
         if(this.children !== undefined)
         {
             if(otherNode.children !== undefined)

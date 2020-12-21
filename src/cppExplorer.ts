@@ -30,19 +30,60 @@ export class ExplorerTree extends TreeProvider
         var folderName = await UserInterface.prompt("Folder Name");
         if(folderName !== "")
         {
-            if(!this.fileSystemInterface.directoryExists(node.relativeWorkspacePath+"/"+folderName))
-            {
-                this.fileSystemInterface.createPath(node.relativeWorkspacePath+"/"+folderName);
-                this.refresh();
-            }
+            this.fileSystemInterface.addProjectFolder(node.relativeWorkspacePath, folderName);
+            this.refresh();
         }
     }
 
-    createWorkspace()
+    async addBatchTest(node: TreeNode)
     {
-        this.fileSystemInterface.createWorkspace();
-        SystemCaller.initilizeGit(this.workspaceRoot);
+        var batchName = await UserInterface.prompt("Batch Test Name");
+        if(batchName !== "")
+        {
+            var projectName = node.relativeWorkspacePath;
+            this.fileSystemInterface.addBatchTest(projectName, batchName);
+
+            this.refresh();
+        }
+    }
+
+    async addLicenseFull()
+    {
+        var projects = this.fileSystemInterface.getProjects();
+        var projectName = await UserInterface.getFromList(projects);
+        if(projectName !== "")
+        {
+            this.fileSystemInterface.createLicense(projectName);
+            this.refresh();
+        }
+    }
+
+    addLicense(node: TreeNode)
+    {
+        this.fileSystemInterface.createLicense(node.relativeWorkspacePath);
         this.refresh();
+    }
+
+    async createWorkspace()
+    {
+        var makeGit :boolean|undefined;
+        var configure: boolean|undefined;
+        if((makeGit = await UserInterface.yesNoCancel(["Don't Create git repo", "Create git repo"])) !== undefined)
+        {
+            if((configure = await UserInterface.yesNoCancel(["Don't initialize CMake (Pick this if using CMake-Tools)", "Initialize CMake (Pick this if you are manually running Ninja)"])) !== undefined)
+            {
+                this.fileSystemInterface.createWorkspace();
+                if(makeGit)
+                {
+                    SystemCaller.initilizeGit(this.workspaceRoot);
+                }
+                if(configure)
+                {
+                    SystemCaller.runCMake(this.workspaceRoot);
+                }
+                this.refresh();
+            }
+        }
     }
 
     deleteBinaries()
@@ -54,6 +95,18 @@ export class ExplorerTree extends TreeProvider
     removeCmakeData()
     {
         this.fileSystemInterface.removeCmakeData();
+        this.refresh();
+    }
+
+    unloadProject(node: TreeNode)
+    {
+        this.fileSystemInterface.unloadProject(node.relativeWorkspacePath);
+        this.refresh();
+    }
+
+    reloadProject(node: TreeNode)
+    {
+        this.fileSystemInterface.reloadProject(node.relativeWorkspacePath);
         this.refresh();
     }
 
@@ -90,7 +143,7 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter Class Name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName);
+                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, true);
                 this.fileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, fileName);
             }
         }
@@ -107,7 +160,7 @@ export class ExplorerTree extends TreeProvider
             fileName = await UserInterface.prompt('Enter .hpp file name');
             if(fileName !== "")
             {
-                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, "");
+                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, false);
             }
         }
         else if(fileType === FileType.cpp)

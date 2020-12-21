@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {TreeNode, TreeNodeType} from './TreeNode';
 import {FileSystemInterface} from './FileSystemInterface';
+import { realpath } from 'fs';
 
 export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
 {
@@ -57,7 +58,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
                 var rootNode: TreeNode = new TreeNode(vscode.workspace.name, TreeNodeType.workSpace, "", this.workspaceRoot);
                 this.runProjectEvents();
                 this.createTheTree(rootNode);
-                this.removeOldProjects(rootNode);
+                this.removeOldProjects(this.nodes[0]);
                 this.fileSystemInterface.updateSourcesFiles();
                 this.fileSystemInterface.updateExplorerProjectsFile();
             }
@@ -71,12 +72,12 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
         for(loop = 0; loop < projects.length; loop++)
         {
             var projectName = projects[loop];
-            if(this.fileSystemInterface.getOption("EnableInternalKeyword", projectName))
+            if(this.fileSystemInterface.getOption("CppEx_EnableInternalKeyword", projectName))
             {
                 this.fileSystemInterface.generateInternalHeader(projectName);
             }
 
-            if(this.fileSystemInterface.getOption("AutoGenCombinedLibraryHeader", projectName))
+            if(this.fileSystemInterface.getOption("CppEx_AutoGenCombinedLibraryHeader", projectName))
             {
                this.fileSystemInterface.generateCombinedHeader(projectName);
             }
@@ -120,7 +121,20 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
             var fileName = projects[loop];
             if(this.fileSystemInterface.projectIsValid(fileName))
             {
-                const node = this.generateProjectNode(fileName);
+                var node:TreeNode;
+                if(this.fileSystemInterface.projectLoaded(fileName))
+                {
+                    node = this.generateProjectNode(fileName);
+                }
+                else
+                {
+                    let unloadedType = TreeNodeType.unloadedExecutable;
+                    if(this.fileSystemInterface.getProjectType(fileName) === TreeNodeType.library)
+                    {
+                        unloadedType = TreeNodeType.unloadedLibrary;
+                    }
+                    node = new TreeNode(fileName, unloadedType, fileName, this.workspaceRoot+"/"+fileName);
+                }
                 if(rootNode.hasDirectChild(fileName))
                 {
                     let otherNode = rootNode.getChild(fileName);
@@ -149,7 +163,47 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
         {
             const binaries = new TreeNode("Binaries", TreeNodeType.binaries, "bin", this.workspaceRoot+"/bin");
             this.nodes.push(binaries);
+            this.generateSubDirectoryNodes(binaries, "bin");
         }
+    }
+
+    generateSubDirectoryNodes(rootNode: TreeNode, relativeWorkspacePath: string)
+    {
+        var folders = this.fileSystemInterface.getDirectories(relativeWorkspacePath);
+        var index = 0;
+        var loop;
+        for(loop = 0; loop < folders.length; loop++)
+        {
+            var folder = folders[loop];
+            var folderNode = new TreeNode(folder, TreeNodeType.folder, relativeWorkspacePath+"/"+folder, this.workspaceRoot+"/"+relativeWorkspacePath+"/"+folder);
+            rootNode.addChild(folderNode, index);
+            index++;
+            this.generateSubDirectoryNodes(folderNode, relativeWorkspacePath+"/"+folder);
+        }
+        
+        var files = this.fileSystemInterface.getFiles(relativeWorkspacePath);
+        for(loop = 0; loop < files.length; loop++)
+        {
+            var file = files[loop];
+            var fileNode = new TreeNode(file, this.getNodeType(file), relativeWorkspacePath+"/"+file, this.workspaceRoot+"/"+relativeWorkspacePath+"/"+file);
+            rootNode.addChild(fileNode, index);
+            index++;
+        }
+    }
+
+    getNodeType(fileName: string) : TreeNodeType
+    {
+        var nodeType = TreeNodeType.file;
+        if(fileName.indexOf(".hpp") !== -1)
+        {
+            nodeType = TreeNodeType.header;
+        }
+        else if(fileName.indexOf(".cpp") !== -1)
+        {
+            nodeType = TreeNodeType.code;
+        }
+
+        return nodeType;
     }
 
     generateProjectNode(projectName: string) : TreeNode
@@ -161,58 +215,109 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
         projectNode.addChild(dependancies, index);
         index++;
 
-        if(this.fileSystemInterface.getOption("EnableTesting", projectName))
+        if(this.fileSystemInterface.getOption("CppEx_TestingSectionVisible", projectName))
         {
             const tests = new TreeNode("Tests", TreeNodeType.tests, projectName, this.workspaceRoot+"/"+projectName+"tests");
             projectNode.addChild(tests, index);
             index++;
         }
+        this.fileSystemInterface.createMinimumProjectFolders(projectName);
+        index = this.generateProjectSubDirectoryNodes(projectNode, projectName, index, "");
         
-        var directories = this.fileSystemInterface.getDirectories(projectName);
+        this.generateProjectRootFiles(projectName, projectNode, index);
+
+        return projectNode;
+    }
+
+    generateProjectRootFiles(projectName: string, projectNode: TreeNode, index: number)
+    {
+        var rootFiles = this.fileSystemInterface.getFiles(projectName);
         var loop;
-        for(loop = 0; loop < directories.length; loop++)
+        for(loop = 0; loop < rootFiles.length; loop++)
         {
-            if(directories[loop].toUpperCase() === "INCLUDE" || directories[loop].toUpperCase() === "SRC")
+            let fileName = rootFiles[loop];
+            if (fileName.toUpperCase() === "LICENSE")
             {
+                projectNode.addChild(new TreeNode("LICENSE", TreeNodeType.license, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
+            }
+            else if(fileName.toUpperCase() === "CMAKELISTS.TXT" || fileName.toUpperCase().indexOf(".CMAKE") !== -1)
+            {
+                index--; //makes a zero change when index++ is hit.
+            } //Don't include these files
+            else if(fileName.toUpperCase().indexOf(".HPP") !== -1)
+            {
+                projectNode.addChild(new TreeNode(fileName, TreeNodeType.header, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
+            }
+            else if(fileName.toUpperCase().indexOf(".CPP") !== -1)
+            {
+                projectNode.addChild(new TreeNode(fileName, TreeNodeType.code, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
             }
             else
             {
-                projectNode.addChild(new TreeNode(directories[loop], TreeNodeType.folder, projectName+"/"+directories[loop], this.workspaceRoot+"/"+projectName+"/"+directories[loop]), index);
-                index++;
-            }
-        }
-
-        var files = this.fileSystemInterface.getFiles(projectName);
-        for(loop = 0; loop < files.length; loop++)
-        {
-            var fileName = files[loop];
-            if(!projectNode.hasDirectChild(fileName, false))
-            {
-                if (fileName.toUpperCase() === "LICENSE")
-                {
-                    projectNode.addChild(new TreeNode("LICENSE", TreeNodeType.license, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
-                }
-                else if(fileName.toUpperCase() === "CMAKELISTS.TXT" || fileName.toUpperCase().indexOf(".CMAKE") !== -1)
-                {
-                    index--; //makes a zero change when index++ is hit.
-                } //Don't include this file
-                else if(fileName.toUpperCase().indexOf(".HPP") !== -1)
-                {
-                    projectNode.addChild(new TreeNode(fileName, TreeNodeType.header, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
-                }
-                else if(fileName.toUpperCase().indexOf(".CPP") !== -1)
-                {
-                    projectNode.addChild(new TreeNode(fileName, TreeNodeType.code, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
-                }
-                else
-                {
-                    projectNode.addChild(new TreeNode(fileName, TreeNodeType.rootfile, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
-                }
+                projectNode.addChild(new TreeNode(fileName, TreeNodeType.file, projectName+"/"+fileName, this.workspaceRoot+"/"+projectName+"/"+fileName), index);
             }
             index++;
         }
-        
-        return projectNode;
+    }
+
+    generateProjectSubDirectoryNodes(rootNode: TreeNode, projectName: string, index: number, nestedPath: string) : number
+    {
+        var directories = this.fileSystemInterface.getDirectories(projectName+"/include"+nestedPath);
+        var loop;
+        for(loop = 0; loop < directories.length; loop++)
+        {
+            let relativePath = projectName+"/include"+nestedPath+directories[loop];
+            let folderNode = new TreeNode(directories[loop], TreeNodeType.folder, relativePath, this.workspaceRoot+"/"+relativePath);
+            rootNode.addChild(folderNode, index);
+            index++;
+            this.generateProjectSubDirectoryNodes(folderNode, projectName, 0, "/"+directories[loop]);
+        }
+
+        var headerFiles = this.fileSystemInterface.getFiles(projectName+"/include"+nestedPath);
+        var sourceFiles = this.fileSystemInterface.getFiles(projectName+"/src"+nestedPath);
+        var onlyHeaders :string[] = [];
+        var onlySource :string[] =[];
+        var classes : string[] = [];
+        for(loop = 0; loop < headerFiles.length; loop++)
+        {
+            var fileName = headerFiles[loop];
+            var shortened = fileName.substring(0,fileName.length-4);
+            if(sourceFiles.indexOf(shortened+".cpp") === -1)
+            {
+                onlyHeaders.push(headerFiles[loop]);
+            }
+            else
+            {
+                classes.push(shortened);
+            }
+        }
+        for(loop = 0; loop < sourceFiles.length; loop++)
+        {
+            if(headerFiles.indexOf(sourceFiles[loop].substring(0,sourceFiles[loop].length-4)+".hpp") === -1)
+            {
+                onlySource.push(sourceFiles[loop]);
+            }
+        }
+        for(loop = 0; loop < onlyHeaders.length; loop++)
+        {
+            let relativePath = projectName + "/include"+nestedPath+"/"+onlyHeaders[loop];
+            rootNode.addChild(new TreeNode(onlyHeaders[loop], TreeNodeType.header, relativePath, this.workspaceRoot+"/"+relativePath), index);
+            index++;
+        }
+        for(loop = 0; loop < classes.length; loop++)
+        {
+            let relativePath = projectName + "/{include|src}"+nestedPath+"/"+classes[loop]+"{.hpp|.cpp}";
+            rootNode.addChild(new TreeNode(classes[loop], TreeNodeType.classType, relativePath, this.workspaceRoot+"/"+relativePath), index);
+            index++;
+        }
+        for(loop = 0; loop < onlySource.length; loop++)
+        {
+            let relativePath = projectName + "/src"+nestedPath+"/"+onlySource[loop];
+            rootNode.addChild(new TreeNode(onlySource[loop], TreeNodeType.code, relativePath, this.workspaceRoot+"/"+relativePath), index);
+            index++;
+        }
+
+        return index;
     }
 
     removeOldProjects(rootNode: TreeNode)
