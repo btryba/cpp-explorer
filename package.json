@@ -120,6 +120,11 @@
 				"command": "cppExplorer.deleteFile",
 				"title": "Delete File",
 				"icon": "$(trash)"
+			},
+			{
+				"command": "cppExplorer.addBatchTest",
+				"title": "Add Batch Test",
+				"icon": "$(expand-all)"
 			}
 		],
 		"views": {
@@ -156,6 +161,10 @@
 					"command": "cppExplorer.addLibrary",
 					"when": "view == cppExplorer && viewItem == libraries",
 					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.addLibrary",
+					"when": "view == cppExplorer && viewItem == libraries"
 				},
 
 				{
@@ -231,6 +240,10 @@
 					"when": "view == cppExplorer && viewItem == dependancies",
 					"group": "inline"
 				},
+				{
+					"command": "cppExplorer.addDependancy",
+					"when": "view == cppExplorer && viewItem == dependancies"
+				},
 				
 				{
 					"command": "cppExplorer.deleteBinaries",
@@ -252,6 +265,21 @@
 				{
 					"command": "cppExplorer.deleteFile",
 					"when": "view == cppExplorer && viewItem == file"
+				},
+
+				{
+					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == folder"
+				},
+
+				{
+					"command": "cppExplorer.addBatchTest",
+					"when": "view == cppExplorer && viewItem == tests"
+				},
+				{
+					"command": "cppExplorer.addBatchTest",
+					"when": "view == cppExplorer && viewItem == tests",
+					"group": "inline"
 				}
 			]
 		}
