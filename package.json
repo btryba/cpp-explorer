@@ -164,43 +164,7 @@
 					"group": "inline"
 				},
 				{
-					"command": "cppExplorer.convertToExe",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.deleteProject",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.makeReadOnlyProject",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.addProjectFolder",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "inline"
-				},
-
-				{
 					"command": "cppExplorer.addClass",
-					"when": "view == cppExplorer && viewItem == executable",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.convertToLib",
-					"when": "view == cppExplorer && viewItem == executable",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.addProjectFolder",
-					"when": "view == cppExplorer && viewItem == executable",
-					"group": "inline"
-				},
-				{
-					"command": "cppExplorer.deleteProject",
 					"when": "view == cppExplorer && viewItem == executable",
 					"group": "inline"
 				},
