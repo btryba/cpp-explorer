@@ -87,16 +87,6 @@
 				"icon": "$(book)"
 			},
 			{
-				"command": "cppExplorer.convertToLib",
-				"title": "Convert Project To Library",
-				"icon": "$(symbol-boolean)"
-			},
-			{
-				"command": "cppExplorer.convertToExe",
-				"title": "Convert Project To Executable",
-				"icon": "$(symbol-boolean)"
-			},
-			{
 				"command": "cppExplorer.addDependancy",
 				"title": "Add Dependancy",
 				"icon": "$(repo-push)"
@@ -117,16 +107,6 @@
 				"icon": "$(trash)"
 			},
 			{
-				"command": "cppExplorer.makeReadOnlyProject",
-				"title": "Convert Project ReadOnly (Move to Libraries)",
-				"icon": "$(symbol-text)"
-			},
-			{
-				"command": "cppExplorer.makeEditableProject",
-				"title": "Make Library Editable (Make it a Project)",
-				"icon": "$(whole-word)"
-			},
-			{
 				"command": "cppExplorer.removeCmakeData",
 				"title": "Remove All Build Data (CMake must be re-run after this)",
 				"icon": "$(circle-slash)"
@@ -137,9 +117,19 @@
 				"icon": "$(trash)"
 			},
 			{
+				"command": "cppExplorer.deleteClass",
+				"title": "Delete Class",
+				"icon": "$(trash)"
+			},
+			{
 				"command": "cppExplorer.addBatchTest",
 				"title": "Add Batch Test",
 				"icon": "$(expand-all)"
+			},
+			{
+				"command": "cppExplorer.removeLibrary",
+				"title": "Remove Library",
+				"icon": "$(trash)"
 			},
 			{
 				"command": "cppExplorer.editTestingConfig",
@@ -239,22 +229,12 @@
 					"group": "library"
 				},
 				{
-					"command": "cppExplorer.convertToExe",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "library@1"
-				},
-				{
 					"command": "cppExplorer.deleteProject",
 					"when": "view == cppExplorer && viewItem == library",
 					"group": "library@1"
 				},
 				{
 					"command": "cppExplorer.projectUnload",
-					"when": "view == cppExplorer && viewItem == library",
-					"group": "library@1"
-				},
-				{
-					"command": "cppExplorer.makeReadOnlyProject",
 					"when": "view == cppExplorer && viewItem == library",
 					"group": "library@1"
 				},
@@ -273,11 +253,6 @@
 					"command": "cppExplorer.editProjectProperties",
 					"when": "view == cppExplorer && viewItem == executable",
 					"group": "executable@2"
-				},
-				{
-					"command": "cppExplorer.convertToLib",
-					"when": "view == cppExplorer && viewItem == executable",
-					"group": "executable@1"
 				},
 				{
 					"command": "cppExplorer.addLicense",
@@ -317,6 +292,14 @@
 				{
 					"command": "cppExplorer.openHpp",
 					"when": "view == cppExplorer && viewItem == class"
+				},
+				{
+					"command": "cppExplorer.deleteClass",
+					"when": "view == cppExplorer && viewItem == class"
+				},
+				{
+					"command": "cppExplorer.removeLibrary",
+					"when": "view == cppExplorer && viewItem == readonlyLibrary"
 				},
 
 				{

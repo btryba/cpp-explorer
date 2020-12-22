@@ -78,7 +78,10 @@ class FileData
         for(includeLoop = 0; includeLoop < list.length; includeLoop++)
         {
             var shortenedName = list[includeLoop].substring(lengthToClip);
-            fileContents += "    #include \"" + shortenedName + "\"\n";
+            if(shortenedName !== projectName+".hpp")
+            {
+                fileContents += "    #include \"" + shortenedName + "\"\n";
+            }
         }
         fileContents += "\n";
         if(internalkey)
@@ -270,6 +273,21 @@ export class FileSystemInterface
         this.writeFile(relativeWorkspacePath, FileData.implementationFile(projectName, className));
     }
 
+    removeLibrary(libraryName: string)
+    {
+        var libraries = this.getLibraries();
+        var loop;
+        var fileContents = "";
+        for(loop = 0; loop < libraries.length; loop++)
+        {
+            if(libraries[loop] !== libraryName)
+            {
+                fileContents += "FIND_PACKAGE("+libraries[loop]+" REQUIRED)\n";
+            }
+        }
+        this.writeFile("CppExplorerDependancies.cmake", fileContents);
+    }
+
     generateInternalHeader(projectName :string)
     {
         var internalPath = projectName+"/include/InternalKeyword.hpp";
@@ -298,7 +316,7 @@ export class FileSystemInterface
     
     generateCombinedHeader(projectName :string)
     {
-        var internalkey = this.getOption("EnableInternalKeyword", projectName);
+        var internalkey = this.getOption("CppEx_EnableInternalKeyword", projectName);
         var list :string[]= [];
         list = this.makeListFiles(this.workspaceRoot+"/"+projectName, list, ".hpp");
         var pathRootLength = this.workspaceRoot.length+projectName.length+2;
@@ -588,17 +606,45 @@ export class FileSystemInterface
         this.createPath(projectName);
         this.createPath(projectName+"/include");
         this.createPath(projectName+"/src");
+        this.createPath(projectName+"/tests");
     
         this.writeFile(projectName+"/SourceFiles.cmake","");
-
+        this.writeFile(projectName+"/CppExplorerOptions.cmake", FileData.projectOptions(projectName, projectType));
         this.writeFile(projectName+"/CMakeLists.txt", FileData.projectConfig(projectType));
+        this.writeFile(projectName+"/tests/CppExplorerTests.txt", "");
   
         if(projectType === TreeNodeType.executable)
         {
             this.writeFile(projectName+"/main.cpp", FileData.mainCpp());
         }
-        
-        this.writeFile(projectName+"/CppExplorerOptions.cmake", FileData.projectOptions(projectName, projectType));
+    }
+
+    addLibrary(packageName: string)
+    {
+        fs.appendFileSync(this.workspaceRoot+"/CppExplorerDependancies.cmake", 
+        "FIND_PACKAGE("+packageName+" REQUIRED)\n");
+    }
+
+    getLibraries() : string[]
+    {
+        var lines = this.getFileAsLines("CppExplorerDependancies.cmake");
+        var loop;
+        var list :string[] = [];
+        for(loop = 0; loop < lines.length; loop++)
+        {
+            var search = "FIND_PACKAGE(";
+            if(lines[loop].indexOf(search) !== -1)
+            {
+                var space = lines[loop].indexOf(" ");
+                if(space === -1)
+                {
+                    space = lines[loop].indexOf(")");
+                }
+                list.push(lines[loop].substring(search.length, space));
+            }
+        }
+        list = list.sort();
+        return list;
     }
 
     deleteFile(relativeWorkspacePath: string)

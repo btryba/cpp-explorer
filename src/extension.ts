@@ -44,31 +44,16 @@ export function activate(context: vscode.ExtensionContext)
 	vscode.commands.registerCommand('cppExplorer.projectReload', (node: TreeNode) => 
 		cppExplorerInstance.reloadProject(node));
 	vscode.commands.registerCommand('cppExplorer.openHpp', (node: TreeNode) => 
-	{
-		let fullPath = node.fullPath;
-		let firstSectionBegin = fullPath.indexOf("{");
-		let firstSectionEnd = fullPath.indexOf("}");
-		let folderFixed = fullPath.substring(0, firstSectionBegin) + "include" + fullPath.substring(firstSectionEnd+1);
-
-		firstSectionBegin = folderFixed.indexOf("{");
-		let completeFix = folderFixed.substring(0, firstSectionBegin)+".hpp";
-		vscode.window.showTextDocument(vscode.Uri.file(completeFix));
-	});
+		cppExplorerInstance.openClassFile(node, "include", ".hpp"));
 	vscode.commands.registerCommand('cppExplorer.openCpp', (node: TreeNode) => 
-	{
-		let fullPath = node.fullPath;
-		let firstSectionBegin = fullPath.indexOf("{");
-		let firstSectionEnd = fullPath.indexOf("}");
-		let folderFixed = fullPath.substring(0, firstSectionBegin) + "src" + fullPath.substring(firstSectionEnd+1);
-
-		firstSectionBegin = folderFixed.indexOf("{");
-		let completeFix = folderFixed.substring(0, firstSectionBegin)+".cpp";
-		vscode.window.showTextDocument(vscode.Uri.file(completeFix));
-	});
+		cppExplorerInstance.openClassFile(node, "src", ".cpp"));
+	vscode.commands.registerCommand('cppExplorer.removeLibrary', (node: TreeNode) => 
+		cppExplorerInstance.removeLibrary(node));
 	
-	
+		vscode.commands.registerCommand('cppExplorer.deleteClass', (node: TreeNode) => 
+		cppExplorerInstance.deleteClass(node));
 	vscode.commands.registerCommand('cppExplorer.addLibrary', (node: TreeNode) => 
-		vscode.window.showInformationMessage(`Successfully called delete entry on ${node.label}.`));
+		cppExplorerInstance.addLibrary());
 	
 
 	// The command has been defined in the package.json file

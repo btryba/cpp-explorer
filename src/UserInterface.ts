@@ -128,6 +128,11 @@ export class UserInterface
         return await this.yesNoCancelIsFalse(["Don't delete project '"+projectName+"'", "Delete project '"+projectName+"'"]);
     }
 
+    static async deleteClass(className :string) : Promise<boolean>
+    {
+        return await this.yesNoCancelIsFalse(["Don't delete class '"+className+"'", "Delete class '"+className+"'"]);
+    }
+
     static async getFileType() : Promise<FileType>
     {
         var types: vscode.QuickPickItem[] = [];

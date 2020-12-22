@@ -84,10 +84,9 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
         }
     }
 
-    createTheTree(rootNode: TreeNode)
+    setRootNode(rootNode: TreeNode) : TreeNode
     {
-        var index = 0;
-        if(this.nodes.length > 1)
+        if(this.nodes.length > 0)
         {
             if(this.nodes[0].label !== vscode.workspace.name)
             {
@@ -104,16 +103,50 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
             this.nodes = [];
             this.nodes.push(rootNode);
         }
+        return rootNode;
+    }
 
+    showLibraries(rootNode: TreeNode)
+    {
+        var libraryNode = new TreeNode("Libraries", TreeNodeType.libraries, "", "");
         if(!rootNode.hasDirectChild("Libraries"))
         {
-            const libraryNode = new TreeNode("Libraries", TreeNodeType.libraries, "", "");
-            rootNode.addChild(libraryNode, index);
+            rootNode.addChild(libraryNode, 0);
             const stdLib = new TreeNode("Standard C++ Library", TreeNodeType.readonlyLibrary, "", "");
             libraryNode.addChild(stdLib,0);
         }
-        index++;
+        else
+        {
+            if(rootNode.children !== undefined) //never will be undefinded
+            {
+                libraryNode = rootNode.children[0];
+            }
+        }
+ 
+        var libraries = this.fileSystemInterface.getLibraries();
+        if(libraryNode.children !== undefined)
+        {
+            if(libraries.length !== libraryNode.children?.length-1)
+            {
+                while(libraryNode.children.length > 1)
+                {
+                    libraryNode.children.pop();
+                }
+                var loop;
+                for(loop = 0; loop < libraries.length; loop++)
+                {
+                    libraryNode.addChild(new TreeNode(libraries[loop], TreeNodeType.readonlyLibrary, libraries[loop], ""), loop+1);
+                }
+            }
+        }
+    }
 
+    createTheTree(rootNode: TreeNode)
+    {
+        var index = 1;
+        rootNode = this.setRootNode(rootNode);
+        this.showLibraries(rootNode);
+        
         var projects = this.fileSystemInterface.getProjects();
         var loop;
         for(loop = 0; loop < projects.length; loop++)

@@ -80,6 +80,7 @@ export class TreeNode extends vscode.TreeItem
         {
             this.tooltip = "Project: "+label;
             this.iconPath = new vscode.ThemeIcon('repo');
+            this.contextValue = 'readonlyLibrary';
         }
         else if(type === TreeNodeType.library)
         {
@@ -148,29 +149,35 @@ export class TreeNode extends vscode.TreeItem
     hasDirectChild(childName: string, asDirectory?: boolean) : boolean
     {
         let retValue = false;
-        this.children?.forEach(child =>{
-            if(retValue === false)
+        var loop;
+        if(this.children !== undefined)
+        {
+            for(loop = 0; loop < this.children?.length; loop++)
             {
-                if(child.label === childName)
+                var child = this.children[loop];
+                if(retValue === false)
                 {
-                    if(asDirectory !== undefined)
+                    if(child.label === childName)
                     {
-                        if(asDirectory === true && child.treeNodeType === TreeNodeType.folder)
+                        if(asDirectory !== undefined)
+                        {
+                            if(asDirectory === true && child.treeNodeType === TreeNodeType.folder)
+                            {
+                                retValue = true;
+                            }
+                            else if (asDirectory !== true && child.treeNodeType !== TreeNodeType.folder)
+                            {
+                                retValue = true;
+                            }
+                        }
+                        else
                         {
                             retValue = true;
                         }
-                        else if (asDirectory !== true && child.treeNodeType !== TreeNodeType.folder)
-                        {
-                            retValue = true;
-                        }
-                    }
-                    else
-                    {
-                        retValue = true;
                     }
                 }
             }
-        });
+        }
         return retValue;
     }
 
