@@ -49,6 +49,10 @@ export function activate(context: vscode.ExtensionContext)
 		cppExplorerInstance.openClassFile(node, "src", ".cpp"));
 	vscode.commands.registerCommand('cppExplorer.removeLibrary', (node: TreeNode) => 
 		cppExplorerInstance.removeLibrary(node));
+	vscode.commands.registerCommand('cppExplorer.addNonCodeFolder', (node: TreeNode) => 
+		cppExplorerInstance.addNonCodeFolder(node));
+	vscode.commands.registerCommand('cppExplorer.addNonCodeFile', (node: TreeNode) => 
+		cppExplorerInstance.addNonCodeFile(node));
 	
 		vscode.commands.registerCommand('cppExplorer.deleteClass', (node: TreeNode) => 
 		cppExplorerInstance.deleteClass(node));

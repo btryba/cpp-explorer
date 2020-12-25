@@ -49,6 +49,16 @@ export class ExplorerTree extends TreeProvider
         }
     }
 
+    async addNonCodeFolder(node: TreeNode)
+    {
+        var folderName = await UserInterface.prompt("Folder Name");
+        if(folderName !== "")
+        {
+            this.fileSystemInterface.addProjectFolder(node.relativeWorkspacePath, folderName);
+            this.refresh();
+        }
+    }
+
     async addLibrary()
     {
         let list = ["Package Config Library"];
@@ -56,6 +66,7 @@ export class ExplorerTree extends TreeProvider
         if(libraryType === "Package Config Library")
         {
             let packageList = [
+                'Custom Named',
                 'ALSA',
                 'Armadillo',
                 'ASPELL',
@@ -213,6 +224,11 @@ export class ExplorerTree extends TreeProvider
             let packageName = await UserInterface.getFromList(packageList);
             if(packageName !== "")
             {
+                if(packageName === "Custom Named")
+                {
+                    packageName = await UserInterface.prompt("Enter package name.");
+                }
+                
                 //let packageMinVersion = await UserInterface.prompt("Minimum version of '"+packageName+"' (Leave blank for no minimum version)");
                 this.fileSystemInterface.addLibrary(packageName);
                 this.refresh();
@@ -420,5 +436,16 @@ export class ExplorerTree extends TreeProvider
         }
 
         this.refresh();
+     }
+
+     async addNonCodeFile(parent: TreeNode)
+     {
+        var fileName = await UserInterface.prompt('Enter File Name With Extension');
+        if(fileName !== "")
+        {
+            fileName = fileName.replace(" ","");
+            this.fileSystemInterface.addFile(parent.relativeWorkspacePath+"/"+fileName);
+            this.refresh();
+        }
      }
 }

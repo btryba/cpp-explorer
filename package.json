@@ -135,6 +135,16 @@
 				"command": "cppExplorer.editTestingConfig",
 				"title": "Properties",
 				"icon": "$(pencil)"
+			},
+			{
+				"command": "cppExplorer.addNonCodeFolder",
+				"title": "Add Non-Code Folder",
+				"icon": "$(new-folder)"
+			},
+			{
+				"command": "cppExplorer.addNonCodeFile",
+				"title": "Add Non-Code File",
+				"icon": "$(new-file)"
 			}
 		],
 		"views": {
@@ -202,6 +212,26 @@
 					"when": "view == cppExplorer && viewItem == libraries"
 				},
 
+
+				{
+					"command": "cppExplorer.addNonCodeFolder",
+					"when": "view == cppExplorer && viewItem == rootFolder"
+				},
+				{
+					"command": "cppExplorer.addNonCodeFolder",
+					"when": "view == cppExplorer && viewItem == rootFolder",
+					"group":"inline"
+				},
+				{
+					"command": "cppExplorer.addNonCodeFile",
+					"when": "view == cppExplorer && viewItem == rootFolder"
+				},
+				{
+					"command": "cppExplorer.addNonCodeFile",
+					"when": "view == cppExplorer && viewItem == rootFolder",
+					"group":"inline"
+				},
+
 				{
 					"command": "cppExplorer.addClass",
 					"when": "view == cppExplorer && viewItem == library",
@@ -225,6 +255,11 @@
 				},
 				{
 					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == library",
+					"group": "library"
+				},
+				{
+					"command": "cppExplorer.addNonCodeFolder",
 					"when": "view == cppExplorer && viewItem == library",
 					"group": "library"
 				},
@@ -261,6 +296,11 @@
 				},
 				{
 					"command": "cppExplorer.addProjectFolder",
+					"when": "view == cppExplorer && viewItem == executable",
+					"group": "executable"
+				},
+				{
+					"command": "cppExplorer.addNonCodeFolder",
 					"when": "view == cppExplorer && viewItem == executable",
 					"group": "executable"
 				},

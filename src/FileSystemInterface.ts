@@ -257,6 +257,11 @@ export class FileSystemInterface
     {
         this.writeFile(projectName+"/LICENSE","");
     }
+
+    addFile(filePath: string)
+    {
+        this.writeFile(filePath,"");
+    }
     
     createHeaderFile(relativeWorkspacePath:string, projectName: string, fileName: string, isClass:boolean)
     {
@@ -518,7 +523,7 @@ export class FileSystemInterface
         var loop;
         for(loop = 0; loop < lines.length; loop++)
         {
-            if(lines[loop].indexOf("add_library(") !== -1)
+            if(lines[loop].toUpperCase().indexOf("ADD_LIBRARY(") !== -1)
             {
                 return TreeNodeType.library;
             }
