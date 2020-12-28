@@ -58,7 +58,7 @@ export class TreeNode extends vscode.TreeItem
                 var child = this.children[loop];
                 if(retValue === false)
                 {
-                    if(child.label === childName)
+                    if(child.name === childName)
                     {
                         if(asDirectory !== undefined)
                         {
@@ -209,7 +209,7 @@ export class TreeNode extends vscode.TreeItem
         this.children?.forEach(child =>{
             if(retValue === undefined)
             {
-                if(child.label === childName)
+                if(child.name === childName)
                 {
                     if(asDirectory !== undefined)
                     {
@@ -287,7 +287,7 @@ export class TreeNode extends vscode.TreeItem
             }
         }
 
-        if(this.label !== otherNode.label || this.contextValue !== otherNode.contextValue)
+        if(this.name !== otherNode.name || this.contextValue !== otherNode.contextValue)
         {
             return false;
         }

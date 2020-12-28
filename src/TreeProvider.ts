@@ -69,7 +69,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
     {
         if(this.nodes.length > 0)
         {
-            if(this.nodes[0].label !== vscode.workspace.name)
+            if(this.nodes[0].name !== vscode.workspace.name)
             {
                 this.nodes = [];
                 this.nodes.push(rootNode);
@@ -120,7 +120,7 @@ export class TreeProvider implements vscode.TreeDataProvider<TreeNode>
             }
         }
     }
-
+    
     createTheTree(rootNode: TreeNode)
     {
         var index = 1;
@@ -234,16 +234,12 @@ class ProjectNodeManager
         {
             for(var loop = 0; loop < rootNode.children.length; loop++)
             {
-                if(rootNode.children[loop].label !== "Libraries")
+                if(rootNode.children[loop].name !== "Libraries")
                 {
-                    var childLabel = rootNode.children[loop].label?.toString();
-                    if(childLabel !== undefined)
+                    if(projects.indexOf(rootNode.children[loop].name) === -1)
                     {
-                        if(projects.indexOf(childLabel) === -1)
-                        {
-                            rootNode.removeChild(loop);
-                            loop--;
-                        }
+                        rootNode.removeChild(loop);
+                        loop--;
                     }
                 }
             }
@@ -277,7 +273,7 @@ class ProjectNodeManager
         projectNode.addChild(dependancies, index);
         index++;
 
-        if(FileSystemInterface.getOption("CppEx_TestingSectionVisible", projectName))
+        if(FileSystemInterface.getOption("CppEx_EnableTesting", projectName))
         {
             const tests = new TreeNode("Tests", TreeNodeType.tests, projectName, this.workspaceRoot+"/"+projectName+"tests");
             projectNode.addChild(tests, index);

@@ -16,12 +16,12 @@ export class ExplorerTree extends TreeProvider
     //Commands
     enableTests(treeNode : TreeNode)
     {
-        FileSystemInterface.setOption("CppEx_TestingSectionVisible", true, treeNode.name);
+        FileSystemInterface.setOption("CppEx_EnableTesting", "Turn on Testing", true, treeNode.name);
     }
 
     disableTests(treeNode : TreeNode)
     {
-        FileSystemInterface.setOption("CppEx_TestingSectionVisible", false, treeNode.name);
+        FileSystemInterface.setOption("CppEx_EnableTesting", "Turn on Testing", false, treeNode.name);
     }
 
     async deleteFile(relativeWorkspacePath: string)
@@ -249,19 +249,16 @@ export class ExplorerTree extends TreeProvider
 
     async removeLibrary(node: TreeNode)
     {
-        if(node.label !== undefined)
+        var library:string = node.name;
+        if(library === "Standard C++ Library")
         {
-            var library:string = node.label.toString();
-            if(library === "Standard C++ Library")
-            {
-                vscode.window.showInformationMessage("Standard C++ Library can not be removed.");
-                return;
-            }
-            if(await UserInterface.yesNoCancelIsFalse(["Don't remove library '"+library+"'", "Remove library '"+library+"'"]))
-            {
-                FileSystemInterface.removeLibrary(library);
-                this.refresh();
-            }
+            vscode.window.showInformationMessage("Standard C++ Library can not be removed.");
+            return;
+        }
+        if(await UserInterface.yesNoCancelIsFalse(["Don't remove library '"+library+"'", "Remove library '"+library+"'"]))
+        {
+            FileSystemInterface.removeLibrary(library);
+            this.refresh();
         }
     }
 
@@ -378,25 +375,22 @@ export class ExplorerTree extends TreeProvider
 
     async deleteClass(node: TreeNode)
     {
-        if(node.label !== undefined)
+        if(await UserInterface.deleteClass(node.name))
         {
-            if(await UserInterface.deleteClass(node.label?.toString()))
-            {
-                let relativeWorkspacePath = node.relativeWorkspacePath;
-                let firstSectionBegin = relativeWorkspacePath.indexOf("{");
-                let firstSectionEnd = relativeWorkspacePath.indexOf("}");
-                
-                let folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "src" + relativeWorkspacePath.substring(firstSectionEnd+1);
-                firstSectionBegin = folderFixed.indexOf("{");
-                let completeFix = folderFixed.substring(0, firstSectionBegin)+".cpp";
-                FileSystemInterface.deleteFile(completeFix);
-                
-                folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "include" + relativeWorkspacePath.substring(firstSectionEnd+1);
-                firstSectionBegin = folderFixed.indexOf("{");
-                completeFix = folderFixed.substring(0, firstSectionBegin)+".hpp";
-                FileSystemInterface.deleteFile(completeFix);
-                this.refresh();
-            }
+            let relativeWorkspacePath = node.relativeWorkspacePath;
+            let firstSectionBegin = relativeWorkspacePath.indexOf("{");
+            let firstSectionEnd = relativeWorkspacePath.indexOf("}");
+            
+            let folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "src" + relativeWorkspacePath.substring(firstSectionEnd+1);
+            firstSectionBegin = folderFixed.indexOf("{");
+            let completeFix = folderFixed.substring(0, firstSectionBegin)+".cpp";
+            FileSystemInterface.deleteFile(completeFix);
+            
+            folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "include" + relativeWorkspacePath.substring(firstSectionEnd+1);
+            firstSectionBegin = folderFixed.indexOf("{");
+            completeFix = folderFixed.substring(0, firstSectionBegin)+".hpp";
+            FileSystemInterface.deleteFile(completeFix);
+            this.refresh();
         }
     }
 

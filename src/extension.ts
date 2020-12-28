@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext)
 	vscode.commands.registerCommand('cppExplorer.addClass', (node: TreeNode) => 
 		cppExplorerInstance.createClass(node));
 	vscode.commands.registerCommand('cppExplorer.deleteProject', (node: TreeNode) => 
-		cppExplorerInstance.deleteProject(node.label?.toString()));
+		cppExplorerInstance.deleteProject(node.name));
 	vscode.commands.registerCommand('cppExplorer.deleteFile', (node: TreeNode) => 
 		cppExplorerInstance.deleteFile(node.relativeWorkspacePath));
 	vscode.commands.registerCommand('cppExplorer.addProjectFolder', (node: TreeNode) => 
@@ -53,6 +53,10 @@ export function activate(context: vscode.ExtensionContext)
 		cppExplorerInstance.addNonCodeFolder(node));
 	vscode.commands.registerCommand('cppExplorer.addNonCodeFile', (node: TreeNode) => 
 		cppExplorerInstance.addNonCodeFile(node));
+	vscode.commands.registerCommand('cppExplorer.enableTesting', (node: TreeNode) => 
+		cppExplorerInstance.enableTests(node));
+	vscode.commands.registerCommand('cppExplorer.disableTesting', (node: TreeNode) => 
+		cppExplorerInstance.disableTests(node));
 	
 		vscode.commands.registerCommand('cppExplorer.deleteClass', (node: TreeNode) => 
 		cppExplorerInstance.deleteClass(node));

@@ -180,7 +180,6 @@ class FileData
         var fileContents = "SET(CppEx_ProjectName "+projectName+")\n"
         + "SET(CppEx_ProjectVersion 1.0.0)\n"
         + "OPTION(CppEx_EnableTesting \"Turn on Testing\" ON)\n"
-        + "OPTION(CppEx_TestingSectionVisible \"Testing section visibility\" ON)\n"
         + "OPTION(CppEx_EnableInternalKeyword \"Creates an _internal keyword for more access control\" ON)\n";
         if(projectType === TreeNodeType.executable)
         {
@@ -319,7 +318,7 @@ export class FileSystemInterface
     {
         var internalkey = this.getOption("CppEx_EnableInternalKeyword", projectName);
         var list :string[]= [];
-        list = this.makeListFiles(this.workspaceRoot+"/"+projectName, list, ".hpp");
+        var list = this.makeListFiles(this.workspaceRoot+"/"+projectName, list, ".hpp");
         var pathRootLength = this.workspaceRoot.length+projectName.length+2;
         var fileContents = FileData.combinedHeader(projectName, list, pathRootLength, internalkey);
         this.writeFile(projectName+"/"+projectName+".hpp",fileContents);
@@ -404,13 +403,17 @@ export class FileSystemInterface
 
     static projectLoaded(projectName: string) : boolean
     {
-        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
+        return this.lineExist("CppExplorerProjects.cmake", "#ADD_SUBDIRECTORY(\""+projectName+"\")");
+    }
+
+    static lineExist(relativePath:string, lineData:string) : boolean
+    {
+        var currentLines = this.getFileAsLines(relativePath);
         var lines :string[] = [];
         for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
-            var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
-            if(line.indexOf(search) !== -1)
+            if(line.indexOf(lineData) !== -1)
             {
                 return false;
             }
@@ -418,17 +421,16 @@ export class FileSystemInterface
         return true;
     }
 
-    static unloadProject(projectName: string)
+    static replaceLine(relativePath: string, lineToFind:string, replaceLine: string)
     {
-        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
+        var currentLines = this.getFileAsLines(relativePath);
         var lines :string[] = [];
         for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
-            var search = "ADD_SUBDIRECTORY(\""+projectName+"\")";
-            if(line.indexOf(search) !== -1)
+            if(line.indexOf(lineToFind) !== -1)
             {
-                lines.push("#ADD_SUBDIRECTORY(\""+projectName+"\")");
+                lines.push(replaceLine);
             }
             else
             {
@@ -438,24 +440,14 @@ export class FileSystemInterface
         this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
     }
 
+    static unloadProject(projectName: string)
+    {
+        this.replaceLine("CppExplorerProjects.cmake", "ADD_SUBDIRECTORY(\""+projectName+"\")", "#ADD_SUBDIRECTORY(\""+projectName+"\")");
+    }
+
     static reloadProject(projectName: string)
     {
-        var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
-        var lines :string[] = [];
-        for(var loop = 0; loop < currentLines.length; loop++)
-        {
-            var line = currentLines[loop];
-            var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
-            if(line.indexOf(search) !== -1)
-            {
-                lines.push("ADD_SUBDIRECTORY(\""+projectName+"\")");
-            }
-            else
-            {
-                lines.push(currentLines[loop]);
-            }
-        }
-        this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
+        this.replaceLine("CppExplorerProjects.cmake", "#ADD_SUBDIRECTORY(\""+projectName+"\")", "ADD_SUBDIRECTORY(\""+projectName+"\")");
     }
 
     static updateExplorerProjectsFile()
@@ -546,24 +538,18 @@ export class FileSystemInterface
         return false;
     }
 
-    static setOption(optionName:string, setOption: boolean, projectName: string)
+    static setOption(optionName:string, optionDesc:string, setOption: boolean, projectName: string)
     {
-        var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
-        if(this.pathExists(projectName+"/CppExplorerOptions.cmake"))
+        var relativePath = projectName+"/CppExplorerOptions.cmake";
+        var newLine = "OPTION("+optionName+" \""+optionDesc+"\" "+setOption ? "ON":"OFF"+")";
+        if(!this.lineExist(relativePath,"OPTION("+optionName))
         {
-            var result = fs.readFileSync(fullPath).toString();
-            var lines = result.split("\n");
-            let found = false;
-            for(var loop = 0; loop < lines.length; loop++)
-            {
-                var line = lines[loop];
-                if(line.indexOf("OPTION("+optionName) !== -1)
-                {
-                    
-                }
-            }
+            fs.appendFileSync(this.workspaceRoot+"/"+relativePath, newLine);
         }
-        fs.appendFileSync(this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake", "OPTION("+optionName+" "+setOption ? "ON":"OFF"+")");
+        else
+        {
+            this.replaceLine(relativePath, "OPTION("+optionName, newLine);
+        }
     }
 
     static deleteBinaries()
@@ -581,9 +567,7 @@ export class FileSystemInterface
     {
         try
         {
-            var result = fs.readFileSync(this.workspaceRoot+"/"+relativeWorkspacePath).toString();
-            result = result.replace("\r",""); //get rid of windows line endings
-            return result.split("\n");
+            return fs.readFileSync(this.workspaceRoot+"/"+relativeWorkspacePath).toString().replace("\r","").split("\n");
         }
         catch
         {
@@ -654,8 +638,7 @@ export class FileSystemInterface
                 list.push(lines[loop].substring(search.length, space));
             }
         }
-        list = list.sort();
-        return list;
+        return list.sort();
     }
 
     static deleteFile(relativeWorkspacePath: string)
