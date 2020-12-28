@@ -14,6 +14,7 @@ export enum TreeNodeType
     dependancies,
     dependancy,
     tests,
+    disableTests,
     nonCodeFolder,
     folder,
     license,
@@ -50,10 +51,9 @@ export class TreeNode extends vscode.TreeItem
     hasDirectChild(childName: string, asDirectory?: boolean) : boolean
     {
         let retValue = false;
-        var loop;
         if(this.children !== undefined)
         {
-            for(loop = 0; loop < this.children?.length; loop++)
+            for(var loop = 0; loop < this.children?.length; loop++)
             {
                 var child = this.children[loop];
                 if(retValue === false)
@@ -188,6 +188,12 @@ export class TreeNode extends vscode.TreeItem
             this.iconPath = new vscode.ThemeIcon('beaker');
             this.contextValue = "tests";
         }
+        else if(type === TreeNodeType.disableTests)
+        {
+            this.iconPath = new vscode.ThemeIcon('beaker');
+            this.contextValue = "disabledTests";
+            this.description = "(Disabled)";
+        }
         else
         {
             this.tooltip = this.relativeWorkspacePath;
@@ -262,8 +268,7 @@ export class TreeNode extends vscode.TreeItem
             {
                 if(this.children.length === otherNode.children.length)
                 {
-                    var loop;
-                    for(loop = 0; loop < this.children.length; loop++)
+                    for(var loop = 0; loop < this.children.length; loop++)
                     {
                         if(!this.children[loop].equals(otherNode.children[loop]))
                         {

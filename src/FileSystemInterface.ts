@@ -248,42 +248,38 @@ class FileData
 
 export class FileSystemInterface
 {
-    constructor(private workspaceRoot: any)
-    {
-        this.workspaceRoot = workspaceRoot;
-    }
+    static workspaceRoot : string;
 
-    createLicense(projectName: string)
+    static createLicense(projectName: string)
     {
         this.writeFile(projectName+"/LICENSE","");
     }
 
-    addFile(filePath: string)
+    static addFile(filePath: string)
     {
         this.writeFile(filePath,"");
     }
     
-    createHeaderFile(relativeWorkspacePath:string, projectName: string, fileName: string, isClass:boolean)
+    static createHeaderFile(relativeWorkspacePath:string, projectName: string, fileName: string, isClass:boolean)
     {
         this.writeFile(relativeWorkspacePath, FileData.headerFile(projectName, fileName, isClass));
     }
 
-    createTemplateFile(relativeWorkspacePath:string, projectName: string, className: string)
+    static createTemplateFile(relativeWorkspacePath:string, projectName: string, className: string)
     {
         this.writeFile(relativeWorkspacePath, FileData.templateFile(projectName, className));
     }
 
-    createImplementationFile(relativeWorkspacePath:string, projectName: string, className :string)
+    static createImplementationFile(relativeWorkspacePath:string, projectName: string, className :string)
     {
         this.writeFile(relativeWorkspacePath, FileData.implementationFile(projectName, className));
     }
 
-    removeLibrary(libraryName: string)
+    static removeLibrary(libraryName: string)
     {
         var libraries = this.getLibraries();
-        var loop;
         var fileContents = "";
-        for(loop = 0; loop < libraries.length; loop++)
+        for(var loop = 0; loop < libraries.length; loop++)
         {
             if(libraries[loop] !== libraryName)
             {
@@ -293,7 +289,7 @@ export class FileSystemInterface
         this.writeFile("CppExplorerDependancies.cmake", fileContents);
     }
 
-    generateInternalHeader(projectName :string)
+    static generateInternalHeader(projectName :string)
     {
         var internalPath = projectName+"/include/InternalKeyword.hpp";
         if(!this.pathExists(internalPath))
@@ -302,24 +298,24 @@ export class FileSystemInterface
         }
     }
 
-    createMinimumProjectFolders(projectName: string)
+    static createMinimumProjectFolders(projectName: string)
     {
         this.createPath(projectName+"/include");
         this.createPath(projectName+"/src");
     }
 
-    addProjectFolder(currentRelativeWorkspacePath: string, newFolderName: string)
+    static addProjectFolder(currentRelativeWorkspacePath: string, newFolderName: string)
     {
         this.createPath(currentRelativeWorkspacePath+"/"+newFolderName);
     }
 
-    addBatchTest(projectName:string, batchTestName: string)
+    static addBatchTest(projectName:string, batchTestName: string)
     {
         this.createPath(projectName+"/tests");
         this.writeFile(projectName+"/tests/"+batchTestName+".cpp", FileData.batchTestCpp());
     }
     
-    generateCombinedHeader(projectName :string)
+    static generateCombinedHeader(projectName :string)
     {
         var internalkey = this.getOption("CppEx_EnableInternalKeyword", projectName);
         var list :string[]= [];
@@ -329,17 +325,17 @@ export class FileSystemInterface
         this.writeFile(projectName+"/"+projectName+".hpp",fileContents);
     }
 
-    rootIsValid() : boolean
+    static rootIsValid() : boolean
     {
         return this.pathExists("CMakeLists.txt");
     }
 
-    projectIsValid(projectName :string) : boolean
+    static projectIsValid(projectName :string) : boolean
     {
         return this.pathExists(projectName+"/CMakeLists.txt");
     }
 
-    directoryExists(relativeWorkspacePath: string) : boolean
+    static directoryExists(relativeWorkspacePath: string) : boolean
     {
         if(this.pathExists(relativeWorkspacePath) && fs.lstatSync(this.workspaceRoot+"/"+relativeWorkspacePath).isDirectory())
         {
@@ -348,13 +344,12 @@ export class FileSystemInterface
         return false;
     }
 
-    getDirectories(relativeWorkspacePath: string) : string[]
+    static getDirectories(relativeWorkspacePath: string) : string[]
     {
         var list:string[] = [];
         var fullPath = this.workspaceRoot+"/"+relativeWorkspacePath;
         var directories = fs.readdirSync(fullPath);
-        var loop;
-        for(loop = 0; loop < directories.length; loop++)
+        for(var loop = 0; loop < directories.length; loop++)
         {
             var file = directories[loop];
             let fileName = path.basename(file);
@@ -367,13 +362,12 @@ export class FileSystemInterface
         return list;
     }
 
-    getFiles(relativeWorkspacePath: string) : string[]
+    static getFiles(relativeWorkspacePath: string) : string[]
     {
         var list:string[] = [];
         var fullPath = this.workspaceRoot+"/"+relativeWorkspacePath;
         var directories = fs.readdirSync(fullPath);
-        var loop;
-        for(loop = 0; loop < directories.length; loop++)
+        for(var loop = 0; loop < directories.length; loop++)
         {
             var file = directories[loop];
             let fileName = path.basename(file);
@@ -386,11 +380,10 @@ export class FileSystemInterface
         return list;
     }
 
-    updateSourcesFiles()
+    static updateSourcesFiles()
     {
         var projects = this.getProjects();
-        var loop;
-        for(loop = 0; loop < projects.length; loop++)
+        for(var loop = 0; loop < projects.length; loop++)
         {
             if(this.pathExists(projects[loop]))
             {
@@ -409,12 +402,11 @@ export class FileSystemInterface
         }
     }
 
-    projectLoaded(projectName: string) : boolean
+    static projectLoaded(projectName: string) : boolean
     {
         var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
-        var loop;
         var lines :string[] = [];
-        for(loop = 0; loop < currentLines.length; loop++)
+        for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
             var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
@@ -426,12 +418,11 @@ export class FileSystemInterface
         return true;
     }
 
-    unloadProject(projectName: string)
+    static unloadProject(projectName: string)
     {
         var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
-        var loop;
         var lines :string[] = [];
-        for(loop = 0; loop < currentLines.length; loop++)
+        for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
             var search = "ADD_SUBDIRECTORY(\""+projectName+"\")";
@@ -447,12 +438,11 @@ export class FileSystemInterface
         this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
     }
 
-    reloadProject(projectName: string)
+    static reloadProject(projectName: string)
     {
         var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
-        var loop;
         var lines :string[] = [];
-        for(loop = 0; loop < currentLines.length; loop++)
+        for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
             var search = "#ADD_SUBDIRECTORY(\""+projectName+"\")";
@@ -468,13 +458,12 @@ export class FileSystemInterface
         this.writeFile("CppExplorerProjects.cmake", lines.join("\n"));
     }
 
-    updateExplorerProjectsFile()
+    static updateExplorerProjectsFile()
     {
         var projects = this.getProjects();
         var excludedProject :string[] = [];
         var currentLines = this.getFileAsLines("CppExplorerProjects.cmake");
-        var loop;
-        for(loop = 0; loop < currentLines.length; loop++)
+        for(var loop = 0; loop < currentLines.length; loop++)
         {
             var line = currentLines[loop];
             var search = "#ADD_SUBDIRECTORY(";
@@ -498,7 +487,7 @@ export class FileSystemInterface
         this.writeFile("CppExplorerProjects.cmake", fileContents);
     }
 
-    createWorkspace()
+    static createWorkspace()
     {
         this.createPath("libraries");
         this.writeFile("CppExplorerOptions.cmake","SET(CppEx_MinimumCMakeVersion 3.0.0)\n");
@@ -508,7 +497,7 @@ export class FileSystemInterface
         this.writeWorkSpaceFile();
     }
 
-    createPath(relativeWorkspacePath: string)
+    static createPath(relativeWorkspacePath: string)
     {
         if(!this.pathExists(relativeWorkspacePath))
         {
@@ -516,12 +505,11 @@ export class FileSystemInterface
         }
     }
 
-    getProjectType(projectName: string) : TreeNodeType
+    static getProjectType(projectName: string) : TreeNodeType
     {
         var result = fs.readFileSync(this.workspaceRoot+"/"+projectName+"/CMakeLists.txt").toString();
         var lines = result.split("\n");
-        var loop;
-        for(loop = 0; loop < lines.length; loop++)
+        for(var loop = 0; loop < lines.length; loop++)
         {
             if(lines[loop].toUpperCase().indexOf("ADD_LIBRARY(") !== -1)
             {
@@ -532,15 +520,14 @@ export class FileSystemInterface
         return TreeNodeType.executable;
     }
 
-    getOption(optionName:string, projectName: string) : boolean
+    static getOption(optionName:string, projectName: string) : boolean
     {
         var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
         if(this.pathExists(projectName+"/CppExplorerOptions.cmake"))
         {
             var result = fs.readFileSync(fullPath).toString();
             var lines = result.split("\n");
-            var loop;
-            for(loop = 0; loop < lines.length; loop++)
+            for(var loop = 0; loop < lines.length; loop++)
             {
                 var line = lines[loop];
                 if(line.indexOf("OPTION("+optionName) !== -1)
@@ -559,18 +546,38 @@ export class FileSystemInterface
         return false;
     }
 
-    deleteBinaries()
+    static setOption(optionName:string, setOption: boolean, projectName: string)
+    {
+        var fullPath = this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake";
+        if(this.pathExists(projectName+"/CppExplorerOptions.cmake"))
+        {
+            var result = fs.readFileSync(fullPath).toString();
+            var lines = result.split("\n");
+            let found = false;
+            for(var loop = 0; loop < lines.length; loop++)
+            {
+                var line = lines[loop];
+                if(line.indexOf("OPTION("+optionName) !== -1)
+                {
+                    
+                }
+            }
+        }
+        fs.appendFileSync(this.workspaceRoot+"/"+projectName+"/CppExplorerOptions.cmake", "OPTION("+optionName+" "+setOption ? "ON":"OFF"+")");
+    }
+
+    static deleteBinaries()
     {
         this.deleteFolderRecursive(this.workspaceRoot+"/bin");
     }
 
-    removeCmakeData()
+    static removeCmakeData()
     {
         this.deleteFolderRecursive(this.workspaceRoot+"/bin");
         this.deleteFolderRecursive(this.workspaceRoot+"/build");
     }
 
-    private getFileAsLines(relativeWorkspacePath: string) : string[]
+    private static getFileAsLines(relativeWorkspacePath: string) : string[]
     {
         try
         {
@@ -584,7 +591,7 @@ export class FileSystemInterface
         }
     }
 
-    deleteFolderRecursive(fullPathToDelete: string)
+    static deleteFolderRecursive(fullPathToDelete: string)
     {
         if (fs.existsSync(fullPathToDelete))
         {
@@ -600,7 +607,7 @@ export class FileSystemInterface
         }
     };
 
-    createProject(projectName: string, projectType: TreeNodeType)
+    static createProject(projectName: string, projectType: TreeNodeType)
     {
         if(this.getProjects().indexOf(projectName) !== -1)
         {
@@ -624,18 +631,17 @@ export class FileSystemInterface
         }
     }
 
-    addLibrary(packageName: string)
+    static addLibrary(packageName: string)
     {
         fs.appendFileSync(this.workspaceRoot+"/CppExplorerDependancies.cmake", 
         "FIND_PACKAGE("+packageName+" REQUIRED)\n");
     }
 
-    getLibraries() : string[]
+    static getLibraries() : string[]
     {
         var lines = this.getFileAsLines("CppExplorerDependancies.cmake");
-        var loop;
         var list :string[] = [];
-        for(loop = 0; loop < lines.length; loop++)
+        for(var loop = 0; loop < lines.length; loop++)
         {
             var search = "FIND_PACKAGE(";
             if(lines[loop].indexOf(search) !== -1)
@@ -652,12 +658,12 @@ export class FileSystemInterface
         return list;
     }
 
-    deleteFile(relativeWorkspacePath: string)
+    static deleteFile(relativeWorkspacePath: string)
     {
         fs.unlinkSync(this.workspaceRoot+"/"+relativeWorkspacePath);
     }
 
-    private pathExists(relativeWorkspacePath: string): boolean
+    private static pathExists(relativeWorkspacePath: string): boolean
     {
         try
         {
@@ -671,12 +677,11 @@ export class FileSystemInterface
 		return true;
     }
 
-    getProjects() : string[]
+    static getProjects() : string[]
     {
         var list:string[] = [];
         var directories = fs.readdirSync(this.workspaceRoot);
-        var loop;
-        for(loop = 0; loop < directories.length; loop++)
+        for(var loop = 0; loop < directories.length; loop++)
         {
             var file = directories[loop];
             let fileName = path.basename(file);
@@ -692,12 +697,12 @@ export class FileSystemInterface
         return list;
     }
     
-    private writeWorkSpaceFile()
+    private static writeWorkSpaceFile()
     {
         this.writeFile("CMakeLists.txt", FileData.workspaceConfig());
     }
 
-    private makeListFiles(initialFullPath: string, list: string[], ext: string) : string[]
+    private static makeListFiles(initialFullPath: string, list: string[], ext: string) : string[]
     {
         var newList = list;
         if (fs.existsSync(initialFullPath))
@@ -720,7 +725,7 @@ export class FileSystemInterface
         return newList;
     }
 
-    private writeFile(relativeWorkspacePath: string, fileContents: string)
+    private static writeFile(relativeWorkspacePath: string, fileContents: string)
     {
         if(relativeWorkspacePath.indexOf(this.workspaceRoot) === -1)
         {
@@ -732,13 +737,12 @@ export class FileSystemInterface
         }
     }
 
-    private readListFromCMake(relativeWorkspacePath: string, variable: string) : string[]
+    private static readListFromCMake(relativeWorkspacePath: string, variable: string) : string[]
     {
         var lines = this.getFileAsLines(relativeWorkspacePath);
-        var loop;
         var foundVariable = false;
         var result : string[] = [];
-        for(loop = 0; loop < lines.length; loop++)
+        for(var loop = 0; loop < lines.length; loop++)
         {
             let line = lines[loop];
             let searchString = "SET("+variable;
@@ -777,11 +781,10 @@ export class FileSystemInterface
         return result;
     }
 
-    private writeListForCMake(variable: string, list: string[]) : string
+    private static writeListForCMake(variable: string, list: string[]) : string
     {
         var fileContents = "SET("+variable+" ";
-        var loop;
-        for(loop = 0; loop < list.length; loop++)
+        for(var loop = 0; loop < list.length; loop++)
         {
             fileContents += list[loop];
             if(loop === list.length-1)

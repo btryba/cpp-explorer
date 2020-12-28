@@ -110,8 +110,7 @@ export class UserInterface
     static async getFromList(list: string[]) : Promise<string>
     {
         var option: vscode.QuickPickItem[] = [];
-        var loop;
-        for(loop = 0; loop < list.length; loop++)
+        for(var loop = 0; loop < list.length; loop++)
         {
             option.push({"label" : list[loop]});
         }

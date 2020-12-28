@@ -3,6 +3,7 @@ import {TreeNode, TreeNodeType} from './TreeNode';
 import {UserInterface, FileType} from './UserInterface';
 import {SystemCaller} from './SystemCaller';
 import {TreeProvider} from './TreeProvider';
+import { FileSystemInterface } from './FileSystemInterface';
 
 export class ExplorerTree extends TreeProvider
 {
@@ -13,13 +14,23 @@ export class ExplorerTree extends TreeProvider
     }
 
     //Commands
+    enableTests(treeNode : TreeNode)
+    {
+        FileSystemInterface.setOption("CppEx_TestingSectionVisible", true, treeNode.name);
+    }
+
+    disableTests(treeNode : TreeNode)
+    {
+        FileSystemInterface.setOption("CppEx_TestingSectionVisible", false, treeNode.name);
+    }
+
     async deleteFile(relativeWorkspacePath: string)
     {
         if(relativeWorkspacePath !== undefined)
         {
             if(await UserInterface.removeFile())
             {
-                this.fileSystemInterface.deleteFile(relativeWorkspacePath);
+                FileSystemInterface.deleteFile(relativeWorkspacePath);
                 this.refresh();
             }
         }
@@ -32,8 +43,8 @@ export class ExplorerTree extends TreeProvider
         {
             if(node.treeNodeType === TreeNodeType.library || node.treeNodeType === TreeNodeType.executable)
             {
-                this.fileSystemInterface.addProjectFolder(node.relativeWorkspacePath+"/include", folderName);
-                this.fileSystemInterface.addProjectFolder(node.relativeWorkspacePath+"/src", folderName);
+                FileSystemInterface.addProjectFolder(node.relativeWorkspacePath+"/include", folderName);
+                FileSystemInterface.addProjectFolder(node.relativeWorkspacePath+"/src", folderName);
             }
             else //Folder
             {
@@ -41,9 +52,9 @@ export class ExplorerTree extends TreeProvider
                 let firstSectionBegin = relativeWorkspacePath.indexOf("{");
                 let firstSectionEnd = relativeWorkspacePath.indexOf("}");
                 let folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "include" + relativeWorkspacePath.substring(firstSectionEnd+1);
-                this.fileSystemInterface.addProjectFolder(folderFixed, folderName);
+                FileSystemInterface.addProjectFolder(folderFixed, folderName);
                 folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "src" + relativeWorkspacePath.substring(firstSectionEnd+1);
-                this.fileSystemInterface.addProjectFolder(folderFixed, folderName);
+                FileSystemInterface.addProjectFolder(folderFixed, folderName);
             }
             this.refresh();
         }
@@ -54,7 +65,7 @@ export class ExplorerTree extends TreeProvider
         var folderName = await UserInterface.prompt("Folder Name");
         if(folderName !== "")
         {
-            this.fileSystemInterface.addProjectFolder(node.relativeWorkspacePath, folderName);
+            FileSystemInterface.addProjectFolder(node.relativeWorkspacePath, folderName);
             this.refresh();
         }
     }
@@ -230,7 +241,7 @@ export class ExplorerTree extends TreeProvider
                 }
                 
                 //let packageMinVersion = await UserInterface.prompt("Minimum version of '"+packageName+"' (Leave blank for no minimum version)");
-                this.fileSystemInterface.addLibrary(packageName);
+                FileSystemInterface.addLibrary(packageName);
                 this.refresh();
             }
         }
@@ -248,7 +259,7 @@ export class ExplorerTree extends TreeProvider
             }
             if(await UserInterface.yesNoCancelIsFalse(["Don't remove library '"+library+"'", "Remove library '"+library+"'"]))
             {
-                this.fileSystemInterface.removeLibrary(library);
+                FileSystemInterface.removeLibrary(library);
                 this.refresh();
             }
         }
@@ -260,7 +271,7 @@ export class ExplorerTree extends TreeProvider
         if(batchName !== "")
         {
             var projectName = node.relativeWorkspacePath;
-            this.fileSystemInterface.addBatchTest(projectName, batchName);
+            FileSystemInterface.addBatchTest(projectName, batchName);
 
             this.refresh();
         }
@@ -268,18 +279,18 @@ export class ExplorerTree extends TreeProvider
 
     async addLicenseFull()
     {
-        var projects = this.fileSystemInterface.getProjects();
+        var projects = FileSystemInterface.getProjects();
         var projectName = await UserInterface.getFromList(projects);
         if(projectName !== "")
         {
-            this.fileSystemInterface.createLicense(projectName);
+            FileSystemInterface.createLicense(projectName);
             this.refresh();
         }
     }
 
     addLicense(node: TreeNode)
     {
-        this.fileSystemInterface.createLicense(node.relativeWorkspacePath);
+        FileSystemInterface.createLicense(node.relativeWorkspacePath);
         this.refresh();
     }
 
@@ -291,7 +302,7 @@ export class ExplorerTree extends TreeProvider
         {
             if((configure = await UserInterface.yesNoCancel(["Don't initialize CMake (Pick this if using CMake-Tools)", "Initialize CMake (Pick this if you are manually running Ninja)"])) !== undefined)
             {
-                this.fileSystemInterface.createWorkspace();
+                FileSystemInterface.createWorkspace();
                 if(makeGit)
                 {
                     SystemCaller.initilizeGit(this.workspaceRoot);
@@ -307,25 +318,25 @@ export class ExplorerTree extends TreeProvider
 
     deleteBinaries()
     {
-        this.fileSystemInterface.deleteBinaries();
+        FileSystemInterface.deleteBinaries();
         this.refresh();
     }
 
     removeCmakeData()
     {
-        this.fileSystemInterface.removeCmakeData();
+        FileSystemInterface.removeCmakeData();
         this.refresh();
     }
 
     unloadProject(node: TreeNode)
     {
-        this.fileSystemInterface.unloadProject(node.relativeWorkspacePath);
+        FileSystemInterface.unloadProject(node.relativeWorkspacePath);
         this.refresh();
     }
 
     reloadProject(node: TreeNode)
     {
-        this.fileSystemInterface.reloadProject(node.relativeWorkspacePath);
+        FileSystemInterface.reloadProject(node.relativeWorkspacePath);
         this.refresh();
     }
 
@@ -336,7 +347,7 @@ export class ExplorerTree extends TreeProvider
 
         if(projectType !== TreeNodeType.file)
         {
-            this.fileSystemInterface.createProject(projectName, projectType);
+            FileSystemInterface.createProject(projectName, projectType);
             this.refresh();
         }
     }
@@ -347,7 +358,7 @@ export class ExplorerTree extends TreeProvider
         {
             if(await UserInterface.deleteProject(projectName))
             {
-                this.fileSystemInterface.deleteFolderRecursive(this.workspaceRoot+"/"+projectName);
+                FileSystemInterface.deleteFolderRecursive(this.workspaceRoot+"/"+projectName);
                 this.refresh();
             }
         }
@@ -378,12 +389,12 @@ export class ExplorerTree extends TreeProvider
                 let folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "src" + relativeWorkspacePath.substring(firstSectionEnd+1);
                 firstSectionBegin = folderFixed.indexOf("{");
                 let completeFix = folderFixed.substring(0, firstSectionBegin)+".cpp";
-                this.fileSystemInterface.deleteFile(completeFix);
+                FileSystemInterface.deleteFile(completeFix);
                 
                 folderFixed = relativeWorkspacePath.substring(0, firstSectionBegin) + "include" + relativeWorkspacePath.substring(firstSectionEnd+1);
                 firstSectionBegin = folderFixed.indexOf("{");
                 completeFix = folderFixed.substring(0, firstSectionBegin)+".hpp";
-                this.fileSystemInterface.deleteFile(completeFix);
+                FileSystemInterface.deleteFile(completeFix);
                 this.refresh();
             }
         }
@@ -399,8 +410,8 @@ export class ExplorerTree extends TreeProvider
             if(fileName !== "")
             {
                 fileName = fileName.replace(" ","");
-                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, true);
-                this.fileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, fileName);
+                FileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, true);
+                FileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, fileName);
             }
         }
         else if(fileType === FileType.template)
@@ -409,7 +420,7 @@ export class ExplorerTree extends TreeProvider
             if(fileName !== "")
             {
                 fileName = fileName.replace(" ","");
-                this.fileSystemInterface.createTemplateFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName);
+                FileSystemInterface.createTemplateFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName);
             }
         }
         else if(fileType === FileType.hpp)
@@ -418,7 +429,7 @@ export class ExplorerTree extends TreeProvider
             if(fileName !== "")
             {
                 fileName = fileName.replace(" ","");
-                this.fileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, false);
+                FileSystemInterface.createHeaderFile(parent.relativeWorkspacePath+"/include/"+fileName+".hpp", parent.name, fileName, false);
             }
         }
         else if(fileType === FileType.cpp)
@@ -427,7 +438,7 @@ export class ExplorerTree extends TreeProvider
             if(fileName !== "")
             {
                 fileName = fileName.replace(" ","");
-                this.fileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, "");
+                FileSystemInterface.createImplementationFile(parent.relativeWorkspacePath+"/src/"+fileName+".cpp", parent.name, "");
             }
         }
         else
@@ -444,7 +455,7 @@ export class ExplorerTree extends TreeProvider
         if(fileName !== "")
         {
             fileName = fileName.replace(" ","");
-            this.fileSystemInterface.addFile(parent.relativeWorkspacePath+"/"+fileName);
+            FileSystemInterface.addFile(parent.relativeWorkspacePath+"/"+fileName);
             this.refresh();
         }
      }

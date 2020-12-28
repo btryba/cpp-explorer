@@ -42,6 +42,16 @@
 				"icon": "$(wrench)"
 			},
 			{
+				"command": "cppExplorer.disableTesting",
+				"title": "Disable Tests",
+				"icon": "$(eye-closed)"
+			},
+			{
+				"command": "cppExplorer.enableTesting",
+				"title": "Enable Tests",
+				"icon": "$(eye)"
+			},
+			{
 				"command": "cppExplorer.projectUnload",
 				"title": "Unload Project",
 				"icon": "$(discard)"
@@ -181,6 +191,17 @@
 					"command": "cppExplorer.editWorkspaceProperties",
 					"when": "view == cppExplorer && viewItem == workspace",
 					"group": "workspace@1"
+				},
+
+				{
+					"command": "cppExplorer.enableTesting",
+					"when": "view == cppExplorer && viewItem == disabledTests",
+					"group": "inline"
+				},
+				{
+					"command": "cppExplorer.disableTesting",
+					"when": "view == cppExplorer && viewItem == tests",
+					"group": "inline"
 				},
 
 				{
